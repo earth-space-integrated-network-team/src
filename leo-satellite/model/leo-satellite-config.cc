@@ -23,7 +23,7 @@ extern double CalculateDistanceGroundToSat (const Vector &a, const Vector &b);
 double speed_of_light = 299792458; //in m/s
 
 //typeid
-TypeId LeoSatelliteConfig::GetTypeId (void)
+TypeId LeoSatelliteConfig::GetTypeId (void)			///asdfasdfasdf
 {
   static TypeId tid = TypeId ("ns3::LeoSatelliteConfig")
   .SetParent<Object> ()
