@@ -29,7 +29,7 @@ TypeId LeoSatelliteConfig::GetTypeId (void)			///asdfasdfasdf
   .SetParent<Object> ()
   .SetGroupName("LeoSatellite")		//asdfsadf
   ;
-  return tid;
+  return tid; //ap[kfsl;
 }
 
 LeoSatelliteConfig::~LeoSatelliteConfig ()
