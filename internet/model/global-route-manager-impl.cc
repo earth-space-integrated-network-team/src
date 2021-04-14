@@ -608,6 +608,12 @@ GlobalRouteManagerImpl::DeleteGlobalRoutes ()
 // on the other side of a point-to-point link).  We take these LSAs and put
 // add them to the Link State DataBase (LSDB) from which the routes will 
 // ultimately be computed.
+
+//为了构建路由数据库，我们需要遍历系统中的节点列表，并寻找那些支持GlobalRouter接口的节点。
+//这些路由器将输出大量的链路状态通告(lsa)，描述“相邻”的链路和网络(即在点对点链路的另一端)。我们将这些lsa添加到链路状态数据库(LSDB)中，路由将从该数据库中生成
+//最终计算。
+
+
 //
 void
 GlobalRouteManagerImpl::BuildGlobalRoutingDatabase () 
