@@ -107,6 +107,7 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
      //Ipv4ListRoutingHelper list;//swd
      //list.Add(olsr,100);//swd
      //stack.SetRoutingHelper(list);//swd
+     //stack.EnablePcapIpv4All("example");
      stack.Install(temp_plane);
      this->plane.push_back(temp_plane);
   }
@@ -120,6 +121,11 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
   double delay = (distance * 1000)/speed_of_light; //should get delay in seconds
   //构造点对点信道，以方便接下来适配于所有轨道内节点间上
   PointToPointHelper intraplane_link_helper;
+  //
+  //
+  intraplane_link_helper.EnablePcapAll("intraplane_link");
+  //
+  //
   intraplane_link_helper.SetDeviceAttribute ("DataRate", StringValue ("5.36Gbps"));
   intraplane_link_helper.SetChannelAttribute ("Delay", TimeValue(Seconds (delay)));
 
@@ -157,6 +163,11 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
       double distance = CalculateDistance(nodeAPos, nodeBPos);
       double delay = (distance*1000)/speed_of_light;
       CsmaHelper interplane_link_helper;
+      //
+      //
+      interplane_link_helper.EnablePcapAll("interplan_link");
+      //
+      //
       interplane_link_helper.SetChannelAttribute("DataRate", StringValue ("5.36Gbps"));
       interplane_link_helper.SetChannelAttribute("Delay", TimeValue(Seconds(delay)));
 
