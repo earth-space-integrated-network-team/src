@@ -589,6 +589,9 @@ GlobalRouter::GetRouterId (void) const
 // and build the Link State Advertisements that reflect them and their associated
 // networks.
 // 
+
+
+//全局路由？？？
 uint32_t 
 GlobalRouter::DiscoverLSAs ()
 {
