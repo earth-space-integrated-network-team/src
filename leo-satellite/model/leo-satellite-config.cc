@@ -92,7 +92,17 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
        std::cout << Simulator::Now().GetSeconds() << ": plane # "<< i << " node # " <<num_satellites_per_plane - j<< ": x = " << pos.x << ", y = " << pos.y << ", z = " << pos.z << std::endl;
        temp_plane.Add(temp.Get(total_num_satellites/2 + i*num_satellites_per_plane/2 + j - 1));
      }
+
+     //ShortestPathRoutingHelper sr;
+
+    /* Ipv4RoutingHelper sr;
+     Ptr<Ipv4RoutingHelper> srt =CreatObject<Ipv4RoutingHelper>();
+     sr.Set("RoutingTable",PointerValue(srt));
+     */
+
+
      InternetStackHelper stack;
+     //stack.SetRoutingHelper(sr);
      //OlsrHelper olsr;    //swd
      //Ipv4ListRoutingHelper list;//swd
      //list.Add(olsr,100);//swd
@@ -102,20 +112,27 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
   }
 
   //setting up all intraplane links
+  //以轨道面0的1,2卫星为初始节点
   Vector nodeAPosition = this->plane[0].Get(0)->GetObject<MobilityModel>()->GetPosition();
   Vector nodeBPosition = this->plane[0].Get(1)->GetObject<MobilityModel>()->GetPosition();
+  //计算出这两颗卫星之间距离和传播时延
   double distance = CalculateDistance(nodeAPosition, nodeBPosition);
   double delay = (distance * 1000)/speed_of_light; //should get delay in seconds
+  //构造点对点信道，以方便接下来适配于所有轨道内节点间上
   PointToPointHelper intraplane_link_helper;
   intraplane_link_helper.SetDeviceAttribute ("DataRate", StringValue ("5.36Gbps"));
   intraplane_link_helper.SetChannelAttribute ("Delay", TimeValue(Seconds (delay)));
 
   std::cout<<"Setting up intra-plane links with distance of "<<distance<<" km and delay of "<<delay<<" seconds."<<std::endl;
 
+  //遍历所有轨道所有节点，以为所有轨道内，节点配置p2p信道
   for (uint32_t i=0; i<num_planes; i++)
   {
     for (uint32_t j=0; j<num_satellites_per_plane; j++)
     {
+    	//(0,0)->(0,1)->(0,2)->(0,...)->(0,num_satellites_per_plane-1)->(0,0)
+    	//(...,0)->(...,1)->(...,2)->(...,...)->(...,num_satellites_per_plane-1)->(...,0)
+    	//(num_panes-1,0)->(num_panes-1,1)->(num_panes-1,2)->(num_panes-1,...)->(num_panes-1,num_satellites_per_plane-1)->(0,0)
       this->intra_plane_devices.push_back(intraplane_link_helper.Install(plane[i].Get(j), plane[i].Get((j+1)%num_satellites_per_plane)));
       std::cout<<"Plane "<<i<<": channel between node "<<j<<" and node "<<(j+1)%num_satellites_per_plane<<std::endl;
     }
@@ -127,6 +144,12 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
   {
     for (uint32_t j=0; j<num_satellites_per_plane; j++)
     {
+    	//(0,0)->(1,0)	(0,1)->(1,1) ... (0,num_satellites_per_plane-1)->(1,num_satellites_per_plane-1)
+    	//|
+    	//(n0,0)->(n0+1,0)	(n0,1)->(n0+1,1) ... (n0,num_satellites_per_plane-1)->(n0+1,num_satellites_per_plane-1)
+    	//|
+    	//(num_planes-2,0)->(num_planes-1,0)	(num_planes-2,1)->(num_planes-1,1) ... (num_planes-2,num_satellites_per_plane-1)->(num_planes-1,num_satellites_per_plane-1)
+
       uint32_t nodeBIndex; //ID of adjacent satellite
       (i == num_planes - 1) ? nodeBIndex = num_satellites_per_plane - j - 1: nodeBIndex = j;
       Vector nodeAPos = this->plane[i].Get(j)->GetObject<MobilityModel>()->GetPosition();
@@ -229,11 +252,15 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
     std::cout << Simulator::Now().GetSeconds() << ": ground station # " << i << ": x = " << gndPos.x << ", y = " << gndPos.y << std::endl;//swd
     uint32_t closestAdjSat = 0;
     uint32_t closestAdjSatDist = 0;
+
+    //未考虑地球自转情况下，基站设于planeIndex轨道正下方
+    //建立星地链接进在该轨道面内遍历距离
+    //后续可能需要在全局星地链接里遍历距离
     uint32_t planeIndex;
     if (i == 0)
       planeIndex = 0;
     else
-      planeIndex = floor(3*num_planes/7);//????????????????????? May be set randomly
+      planeIndex = floor(3*num_planes/7);
     //find closest adjacent satellite for ground station
     for (uint32_t j=0; j<this->num_satellites_per_plane; j++)
     {
@@ -447,6 +474,7 @@ void LeoSatelliteConfig::UpdateLinks()  //swd
 		Vector gndPos = ground_stations.Get(i)->GetObject<MobilityModel> ()->GetPosition();
 	    uint32_t closestAdjSat = 0;
 	    uint32_t closestAdjSatDist = 0;
+	    //planeIndex同上，需要改
 	    uint32_t planeIndex;
 	    if (i == 0)
 	      planeIndex = 0;
@@ -628,7 +656,6 @@ void LeoSatelliteConfig::UpdateLinks()  //swd
 //  Ipv4GlobalRoutingHelper::RecomputeRoutingTables ();
 //  std::cout<<"Finished Recomputing Routing Tables"<<std::endl;
 //}
-
 
 }
 
