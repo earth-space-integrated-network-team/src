@@ -9,6 +9,7 @@
  */
 
 #include "leo-satellite-config.h"
+#include <typeinfo>
 
 
 namespace ns3 {
@@ -45,7 +46,7 @@ TypeId LeoSatelliteConfig::GetInstanceTypeId (void) const
 //constructor
 LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satellites_per_plane, double altitude)
 {
-  pr = 0;//pr = 0 : no satellite in the polar region ; pr = 1 : more than one satellite in the polar region
+  //pr = 0;//pr = 0 : no satellite in the polar region ; pr = 1 : more than one satellite in the polar region
   this->num_planes = num_planes;
   this->num_satellites_per_plane = num_satellites_per_plane;
   this->m_altitude = altitude;
@@ -140,6 +141,7 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
     	//(...,0)->(...,1)->(...,2)->(...,...)->(...,num_satellites_per_plane-1)->(...,0)
     	//(num_panes-1,0)->(num_panes-1,1)->(num_panes-1,2)->(num_panes-1,...)->(num_panes-1,num_satellites_per_plane-1)->(0,0)
       this->intra_plane_devices.push_back(intraplane_link_helper.Install(plane[i].Get(j), plane[i].Get((j+1)%num_satellites_per_plane)));
+
       std::cout<<"Plane "<<i<<": channel between node "<<j<<" and node "<<(j+1)%num_satellites_per_plane<<std::endl;
     }
   }
@@ -159,9 +161,60 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
       uint32_t nodeBIndex; //ID of adjacent satellite
       (i == num_planes - 1) ? nodeBIndex = num_satellites_per_plane - j - 1: nodeBIndex = j;
       Vector nodeAPos = this->plane[i].Get(j)->GetObject<MobilityModel>()->GetPosition();
-      Vector nodeBPos = this->plane[(i+1)%num_planes].Get(nodeBIndex)->GetObject<MobilityModel>()->GetPosition();
+      Vector nodeBPos = this->plane[i+1].Get(j)->GetObject<MobilityModel>()->GetPosition();
       double distance = CalculateDistance(nodeAPos, nodeBPos);
       double delay = (distance*1000)/speed_of_light;
+
+      PointToPointHelper interplane_link_helper;
+      PointToPointHelper badlink;
+
+
+      interplane_link_helper.EnablePcapAll("interplane_link");
+
+
+
+      interplane_link_helper.SetDeviceAttribute("DataRate", StringValue ("5.36Gbps"));
+      interplane_link_helper.SetChannelAttribute("Delay", TimeValue(Seconds(delay)));
+
+      badlink.SetDeviceAttribute("DataRate", StringValue ("1bps"));
+      badlink.SetChannelAttribute("Delay", TimeValue(Seconds(2000)));
+
+
+      NodeContainer temp_node_container;
+      temp_node_container.Add(this->plane[i].Get(j));
+      temp_node_container.Add(this->plane[i+1].Get(j));//?????????
+
+      NetDeviceContainer temp_netdevice_container;
+      //temp_netdevice_container = interplane_link_helper.Install(temp_node_container);//one node to one line????
+
+      //std::cout<<"here can runaaaaaaaaaaaaa"<<std::endl;
+      if(nodeAPos.x < -70 || nodeAPos.x >70 || nodeBPos.x < -70 || nodeBPos.x > 70) // swd
+      {
+    	  node_pr[i*num_satellites_per_plane+j]=0;
+
+    	  temp_netdevice_container = badlink.Install(temp_node_container.Get(0),temp_node_container.Get(1));
+
+    	  std::cout<<"Channel can not open between plane "<<i<<" satellite "<<j<<" and plane "<<(i+1)%num_planes<<" satellite "<<nodeBIndex<< std::endl;
+      }
+      else
+      {
+    	  node_pr[i*num_satellites_per_plane+j]=1;
+    	  std::cout<<"here can run"<<std::endl;
+    	  temp_netdevice_container = interplane_link_helper.Install(temp_node_container.Get(0),temp_node_container.Get(1));
+    	  std::cout<<"Channel open between plane "<<i<<" satellite "<<j<<" and plane "<<(i+1)%num_planes<<" satellite "<<nodeBIndex<< " with distance "<<distance<< "km and delay of "<<delay<<" seconds"<<std::endl;
+      }
+
+      Ptr<PointToPointChannel> p2p_channel;
+      Ptr<Channel> channel;
+      channel = temp_netdevice_container.Get(0)->GetChannel();
+      p2p_channel = channel->GetObject<PointToPointChannel> ();
+
+
+
+
+
+
+      /*
       CsmaHelper interplane_link_helper;
       //
       //
@@ -223,9 +276,11 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
 //        }
 //      }
 
-      this->inter_pr.push_back(pr); //swd
+      */
+
+      //this->inter_pr.push_back(pr); //swd
       this->inter_plane_devices.push_back(temp_netdevice_container);
-      this->inter_plane_channels.push_back(csma_channel);
+      this->inter_plane_channels.push_back(p2p_channel);
       this->inter_plane_channel_tracker.push_back(nodeBIndex);
     }
   }
@@ -328,6 +383,12 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
   
   //configuring IP Addresses for InterPlane devices
   for(uint32_t i=0; i< this->inter_plane_devices.size(); i++)
+    {
+      address.NewNetwork();
+      this->inter_plane_interfaces.push_back(address.Assign(this->inter_plane_devices[i]));
+    }
+  /*
+  for(uint32_t i=0; i< this->inter_plane_devices.size(); i++)
   {
     address.NewNetwork();
     this->inter_plane_interfaces.push_back(address.Assign(this->inter_plane_devices[i]));
@@ -340,7 +401,7 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
         interface.first->SetDown(interface.second);
       }
     }
-  }
+  }*/
 
   //configuring IP Addresses for Ground devices
   for(uint32_t i=0; i< this->ground_station_devices.size(); i++)
@@ -416,23 +477,39 @@ void LeoSatelliteConfig::UpdateLinks()  //swd
 			uint32_t nodeBIndex; //Used to establish a connection between reverse seams.
 			(i == num_planes - 1) ? nodeBIndex = num_satellites_per_plane - j - 1: nodeBIndex = j;
 			Vector nodeAPos = this->plane[i].Get(j)->GetObject<MobilityModel>()->GetPosition();
-			Vector nodeBPos = this->plane[(i+1)%num_planes].Get(nodeBIndex)->GetObject<MobilityModel>()->GetPosition();
+			Vector nodeBPos = this->plane[i+1].Get(j)->GetObject<MobilityModel>()->GetPosition();
 			double distance = CalculateDistance(nodeAPos, nodeBPos);
 			double delay = (distance*1000)/speed_of_light;
 			//std::cout<<"Channel open between plane "<<i<<" satellite "<<j<<" and plane "<<(i+1)%num_planes<<" satellite "<<nodeBIndex<< " with distance "<<distance<< "km and delay of "<<delay<<" seconds"<<std::endl;
 
+		      PointToPointHelper interplane_link_helper;
+		      PointToPointHelper badlink;
+		      interplane_link_helper.SetDeviceAttribute("DataRate", StringValue ("5.36Gbps"));
+		      interplane_link_helper.SetChannelAttribute("Delay", TimeValue(Seconds(delay)));
+		      badlink.SetDeviceAttribute("DataRate", StringValue ("1bps"));
+		      badlink.SetChannelAttribute("Delay", TimeValue(Seconds(2000)));
+		      NodeContainer temp_node_container;
+		      temp_node_container.Add(this->plane[i].Get(j));
+		      temp_node_container.Add(this->plane[i+1].Get(j));
+		      NetDeviceContainer temp_netdevice_container;
+
+
 		    if(nodeAPos.x < -70 || nodeAPos.x >70 || nodeBPos.x < -70 || nodeBPos.x > 70) // swd
 		    {
-		    	pr = 1;
+		    	node_pr[i*num_satellites_per_plane+j] = 0;
+		    	temp_netdevice_container = badlink.Install(temp_node_container);
 		    	std::cout<<"Channel can not open between plane "<<i<<" satellite "<<j<<" and plane "<<(i+1)%num_planes<<" satellite "<<nodeBIndex<< std::endl;
 		    }
 		    else
 		    {
-		    	pr = 0;
+		    	node_pr[i*num_satellites_per_plane+j] = 1;
+		    	temp_netdevice_container = interplane_link_helper.Install(temp_node_container);
 		    	std::cout<<"Channel open between plane "<<i<<" satellite "<<j<<" and plane "<<(i+1)%num_planes<<" satellite "<<nodeBIndex<< " with distance "<<distance<< "km and delay of "<<delay<<" seconds"<<std::endl;
 		    }
-		    this->inter_pr[i*j+j] = pr;
+		    //this->inter_pr[i*j+j] = pr;
 
+
+		    /*
 		    if(pr == 1)
 		    {
 		    	for (uint32_t k=0; k<num_satellites_per_plane; k++)
@@ -453,14 +530,17 @@ void LeoSatelliteConfig::UpdateLinks()  //swd
 		    			this->inter_plane_channels[i*j+j]->Reattach(this->inter_plane_devices[i*j+j].Get(k+1)->GetObject<CsmaNetDevice> ());
 		    		}
 		        }
-		    }
+		    }*/
 		}
 	}
+
 	//configuring IP Addresses for InterPlane devices
 	for(uint32_t i=0; i< this->inter_plane_devices.size(); i++)
 	{
 		for(uint32_t j=1; j<= this->num_satellites_per_plane; j++)
 		{
+			continue;
+			/*
 			uint32_t pr1 = this->inter_pr[i];//swd
 			if(j != this->inter_plane_channel_tracker[i] + 1 || pr1 == 1)
 			{
@@ -471,12 +551,9 @@ void LeoSatelliteConfig::UpdateLinks()  //swd
 			{
 				std::pair< Ptr< Ipv4 >, uint32_t > interface = this->inter_plane_interfaces[i].Get(j);
 				interface.first->SetUp(interface.second);
-			}
+			}*/
 		}
 	}
-
-
-
 
 	std::cout<<"Updating links between ground stations and their closest satellites:"<<std::endl;
 	//updating links between ground stations and their closest satellites

@@ -55,13 +55,13 @@ private:
   uint32_t num_satellites_per_plane;
   double m_altitude;
 
-  uint32_t pr;//pr = 0 : no satellite in the polar region ; pr = 1 : more than one satellite in the polar region
+  //uint32_t pr;//pr = 0 : no satellite in the polar region ; pr = 1 : more than one satellite in the polar region
 
-  std::vector<uint32_t> inter_pr; //swd Store the value of pr
+  int node_pr[12]={1}; //swd Store the value of pr
   std::vector<NodeContainer> plane; //node container for each plane
   std::vector<NetDeviceContainer> intra_plane_devices; //contains net devices for all P2P links for all planes
   std::vector<NetDeviceContainer> inter_plane_devices;
-  std::vector<Ptr<CsmaChannel>> inter_plane_channels;
+  std::vector<Ptr<PointToPointChannel>> inter_plane_channels;
   std::vector<uint32_t> inter_plane_channel_tracker; //this will have the node from the adjacent plane that is currently connected
   std::vector<NetDeviceContainer> ground_station_devices; 
   std::vector<Ptr<CsmaChannel>> ground_station_channels;
