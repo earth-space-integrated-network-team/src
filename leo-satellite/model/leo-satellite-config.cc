@@ -270,6 +270,8 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
     Vector temp = ground_stations.Get(j)->GetObject<MobilityModel> ()->GetPosition();
     std::cout << "Current Time: " << Simulator::Now().GetSeconds() << ": ground station # " << j << ": x = " << temp.x << ", y = " << temp.y <<std::endl;
   }
+
+  /*
   //setting up links between ground stations and their closest satellites
   std::cout<<"Setting links between ground stations and satellites"<<std::endl;
   for (uint32_t i=0; i<2; i++)
@@ -327,6 +329,7 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
     this->ground_station_devices.push_back(temp_netdevice_container);
     this->ground_station_channels.push_back(csma_channel);
     this->ground_station_channel_tracker.push_back(closestAdjSat);
+    */
   }
 
   //Configure IP Addresses for all NetDevices
