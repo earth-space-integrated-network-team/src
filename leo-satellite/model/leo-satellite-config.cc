@@ -471,11 +471,36 @@ void LeoSatelliteConfig::UpdateLinks()  //swd
 	std::cout<<"Recomputing Routing Tables"<<std::endl;
 	Ipv4GlobalRoutingHelper::RecomputeRoutingTables ();
 	std::cout<<"Finished Recomputing Routing Tables"<<std::endl;
+	PrintGlobalNetInfo();
 
 }
 
 void LeoSatelliteConfig::PrintGlobalNetInfo()
 {
+	for(uint32_t i=0;i<num_planes;i++)
+	{
+		std::cout<<std::endl<<std::endl;
+		std::cout<<"plane "<<i <<" satellites:"<<std::endl;
+		for(uint32_t j=0;j<num_satellites_per_plane;j++)
+		{
+			std::cout<<"("<<i<<","<<j<<"):"<<std::endl;
+			Ptr<Node> current_node = plane[i].Get(j);
+			uint32_t device_num=current_node->GetNDevices();
+			std::cout<<"This satellite have "<<device_num<<" Device"<<std::endl;
+			for(uint32_t k=0;k<device_num;k++)
+			{
+				Ptr<NetDevice> current_device = current_node->GetDevice(k);
+				if(current_device==inter_plane_devices[i].Get(0)) std::cout<<"adsjf;lkasjfkjaslfjklafjlajflsjdafl;jaslfj"<<std::endl;
+				Ptr<Channel> current_channel = current_device->GetChannel();
+				Ptr<NetDevice> first_device = current_channel->GetDevice(0);
+				Ptr<NetDevice> second_device = current_channel->GetDevice(1);
+				if(first_device==current_device)
+				{
+					continue;
+				}
+			}
+		}
+	}
 
 }
 
