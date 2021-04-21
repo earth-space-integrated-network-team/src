@@ -154,15 +154,16 @@ LeoSatelliteMobilityModel::DoSetPosition (const Vector &position)
   //(plane % 2 == 1) ? m_direction = 0: m_direction = 1;//error
 
   //1 = S to N, 0 = N to S
-  if(m_longitude < 0)    //swd
-  {
-	  m_direction = 0;
-  }
-  else
-  {
-	  m_direction = 1;
-  }
-
+//  if(m_longitude < 0)    //swd
+//  {
+//	  m_direction = 0;
+//  }
+//  else
+//  {
+//	  m_direction = 1;
+//  }
+  uint32_t plane = floor((m_current - 1)/(m_nPerPlane*m_numPlanes/2));                  		//psq
+  (plane % 2 == 1) ? m_direction = 0: m_direction = 1;
   std::cout<<"m_direction: "<<m_direction << " m_current: "<<m_current<<" m_latitude: "<<m_latitude<<" m_longitude: "<<m_longitude<<std::endl;// swd
 }
 

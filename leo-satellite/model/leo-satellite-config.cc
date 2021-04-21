@@ -23,13 +23,13 @@ extern double CalculateDistanceGroundToSat (const Vector &a, const Vector &b);
 double speed_of_light = 299792458; //in m/s
 
 //typeid
-TypeId LeoSatelliteConfig::GetTypeId (void)			///asdfasdfasdf
+TypeId LeoSatelliteConfig::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::LeoSatelliteConfig")  //[][[p[p;
+  static TypeId tid = TypeId ("ns3::LeoSatelliteConfig")
   .SetParent<Object> ()
-  .SetGroupName("LeoSatellite")		//asdfsadf
+  .SetGroupName("LeoSatellite")
   ;
-  return tid; //ap[kfsl;
+  return tid;
 }
 
 LeoSatelliteConfig::~LeoSatelliteConfig ()
@@ -171,6 +171,7 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
     	  pr = 0;
     	  std::cout<<"Channel open between plane "<<i<<" satellite "<<j<<" and plane "<<(i+1)%num_planes<<" satellite "<<nodeBIndex<< " with distance "<<distance<< "km and delay of "<<delay<<" seconds"<<std::endl;
       }
+
 
 
       //std::cout<<"Channel open between plane "<<i<<" satellite "<<j<<" and plane "<<(i+1)%num_planes<<" satellite "<<nodeBIndex<< " with distance "<<distance<< "km and delay of "<<delay<<" seconds"<<std::endl;
