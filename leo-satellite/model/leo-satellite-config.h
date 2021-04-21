@@ -46,6 +46,9 @@ public:
   void UpdateLinks (); //update the intersatellite links
 
 
+  void PrintGlobalNetInfo(); //print global Network Information including node list, node position, node address, link attribute
+
+
 
   NodeContainer ground_stations; //node container to hold ground stations
   std::vector<Ipv4InterfaceContainer> ground_station_interfaces;

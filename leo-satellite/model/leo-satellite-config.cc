@@ -398,21 +398,6 @@ void LeoSatelliteConfig::UpdateLinks()  //swd
 			Vector nodeBPos = this->plane[i+1].Get(j)->GetObject<MobilityModel>()->GetPosition();
 			double distance = CalculateDistance(nodeAPos, nodeBPos);
 			double delay = (distance*1000)/speed_of_light;
-			//std::cout<<"Channel open between plane "<<i<<" satellite "<<j<<" and plane "<<(i+1)%num_planes<<" satellite "<<nodeBIndex<< " with distance "<<distance<< "km and delay of "<<delay<<" seconds"<<std::endl;
-
-		      /*PointToPointHelper interplane_link_helper;
-		      PointToPointHelper badlink;
-		      interplane_link_helper.SetDeviceAttribute("DataRate", StringValue ("5.36Gbps"));
-		      interplane_link_helper.SetChannelAttribute("Delay", TimeValue(Seconds(delay)));
-		      badlink.SetDeviceAttribute("DataRate", StringValue ("1bps"));
-		      badlink.SetChannelAttribute("Delay", TimeValue(Seconds(2000)));
-		      NodeContainer temp_node_container;
-		      temp_node_container.Add(this->plane[i].Get(j));
-		      temp_node_container.Add(this->plane[i+1].Get(j));
-		      NetDeviceContainer temp_netdevice_container;
-		      */
-
-
 
 		    if(nodeAPos.x < -70 || nodeAPos.x >70 || nodeBPos.x < -70 || nodeBPos.x > 70) // swd
 		    {
@@ -486,6 +471,11 @@ void LeoSatelliteConfig::UpdateLinks()  //swd
 	std::cout<<"Recomputing Routing Tables"<<std::endl;
 	Ipv4GlobalRoutingHelper::RecomputeRoutingTables ();
 	std::cout<<"Finished Recomputing Routing Tables"<<std::endl;
+
+}
+
+void LeoSatelliteConfig::PrintGlobalNetInfo()
+{
 
 }
 
