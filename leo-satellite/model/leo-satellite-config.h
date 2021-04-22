@@ -24,6 +24,7 @@
 #include "ns3/internet-module.h"
 #include "ns3/ipv4-global-routing-helper.h"
 #include "ns3/applications-module.h"
+#include "ns3/flow-monitor-module.h"//swd
 
 
 namespace ns3 {
@@ -44,6 +45,10 @@ public:
   virtual TypeId GetInstanceTypeId (void) const;
   
   void UpdateLinks (); //update the intersatellite links
+
+  void PrintGlobalNetInfo(); //print global Network Information including node list, node position, node address, link attribute
+
+  void OutputFlowInformation(Ptr<FlowMonitor> flowmon, FlowMonitorHelper &flowmonHelper);//swd流量检测函数
 
   NodeContainer ground_stations; //node container to hold ground stations
   std::vector<NodeContainer> plane; //node container for each plane

@@ -57,16 +57,14 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
 
   //assign mobility model to all satellites
   MobilityHelper mobility;
-  //std::cout<<"mobility.SetMobilityModel:"<<std::endl;//swd
   mobility.SetMobilityModel ("ns3::LeoSatelliteMobilityModel",
                              "NPerPlane", IntegerValue (num_satellites_per_plane),
                              "NumberofPlanes", IntegerValue (num_planes),
                              "Altitude", DoubleValue(altitude),
                              "Time", DoubleValue(Simulator::Now().GetSeconds()));
-  //std::cout<<"mobility.Istall:"<<std::endl;//swd
+
   mobility.Install(temp);
   
-  //std::cout<<"position->SetPosition(null):"<<std::endl;//swd
   for (NodeContainer::Iterator j = temp.Begin ();
        j != temp.End (); ++j)
     {
@@ -77,7 +75,7 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
       NS_ASSERT (position != 0);
     }
 
-  //std::cout<<"assigning nodes to e/ plane's node container as necessary:"<<std::endl;//swd
+
   //assigning nodes to e/ plane's node container as necessary
   for (uint32_t i=0; i<num_planes; i++)
   {
@@ -338,11 +336,8 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
   std::cout<<"Populating Routing Tables"<<std::endl;
   Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
   std::cout<<"Finished Populating Routing Tables"<<std::endl;
+  PrintGlobalNetInfo();
 }
-
-
-
-
 
 
 void LeoSatelliteConfig::UpdateLinks()  //swd
@@ -451,7 +446,112 @@ void LeoSatelliteConfig::UpdateLinks()  //swd
 	std::cout<<"Recomputing Routing Tables"<<std::endl;
 	Ipv4GlobalRoutingHelper::RecomputeRoutingTables ();
 	std::cout<<"Finished Recomputing Routing Tables"<<std::endl;
-
 }
+
+void LeoSatelliteConfig::PrintGlobalNetInfo()
+{
+	for(uint32_t i=0;i<num_planes;i++)
+	{
+		std::cout<<std::endl<<std::endl;
+		std::cout<<"plane "<<i <<" satellites:"<<std::endl;
+		for(uint32_t j=0;j<num_satellites_per_plane;j++)
+		{
+			std::cout<<"("<<i<<","<<j<<"):"<<std::endl;
+			Vector pos= this->plane[i].Get(j)->GetObject<MobilityModel>()->GetPosition();
+			std::cout<<"["<<pos.x<<","<<pos.y<<","<<pos.z<<"]"<<std::endl;
+			if(i==0)
+			{
+				std::cout<<"satellites beside the seam have 3 ISL device:"<<std::endl;
+				std::cout<<"("<<i<<","<<j<<")->"<<"("<<i<<","<<(j+1)%num_satellites_per_plane<<"):	"
+						 <<intra_plane_interfaces[i*num_satellites_per_plane+j].GetAddress(0)<<"->"
+						 <<intra_plane_interfaces[i*num_satellites_per_plane+j].GetAddress(1)<<std::endl;
+				uint32_t temp = (j==0 ? (i+1)*num_satellites_per_plane-1 : j-1);
+				std::cout<<"("<<i<<","<<j<<")->"<<"("<<i<<","<<temp<<"):	"
+						 <<intra_plane_interfaces[temp].GetAddress(1)<<"->"
+						 <<intra_plane_interfaces[temp].GetAddress(0)<< std::endl;
+				std::cout<<"("<<i<<","<<j<<")->"<<"("<<i+1<<","<<j<<"):	"
+						 <<inter_plane_interfaces[i*num_satellites_per_plane+j].GetAddress(0)<<"->"
+						 <<inter_plane_interfaces[i*num_satellites_per_plane+j].GetAddress(1)<<std::endl;
+			}
+			else if(i==num_planes-1)
+			{
+				std::cout<<"satellites beside the seam have 3 ISL device:"<<std::endl;
+				std::cout<<"("<<i<<","<<j<<")->"<<"("<<i<<","<<(j+1)%num_satellites_per_plane<<"):	"
+						 <<intra_plane_interfaces[i*num_satellites_per_plane+j].GetAddress(0)<<"->"
+						 <<intra_plane_interfaces[i*num_satellites_per_plane+j].GetAddress(1)<<std::endl;
+				uint32_t temp = (j==0 ? (i+1)*num_satellites_per_plane-1 : j-1);
+				std::cout<<"("<<i<<","<<j<<")->"<<"("<<i<<","<<temp%num_satellites_per_plane<<"):	"
+						 <<intra_plane_interfaces[temp].GetAddress(1)<<"->"
+						 <<intra_plane_interfaces[temp].GetAddress(0)<< std::endl;
+				std::cout<<"("<<i<<","<<j<<")->"<<"("<<i-1<<","<<j<<"):	"
+						 <<inter_plane_interfaces[(i-1)*num_satellites_per_plane+j].GetAddress(1)<<"->"
+						 <<inter_plane_interfaces[(i-1)*num_satellites_per_plane+j].GetAddress(0)<<std::endl;
+			}
+			else
+			{
+				std::cout<<"satellites NOT beside the seam have 4 ISL device:"<<std::endl;
+				std::cout<<"("<<i<<","<<j<<")->"<<"("<<i<<","<<(j+1)%num_satellites_per_plane<<"):	"
+						 <<intra_plane_interfaces[i*num_satellites_per_plane+j].GetAddress(0)<<"->"
+						 <<intra_plane_interfaces[i*num_satellites_per_plane+j].GetAddress(1)<<std::endl;
+				uint32_t temp = (j==0 ? (i+1)*num_satellites_per_plane-1 : j-1);
+				std::cout<<"("<<i<<","<<j<<")->"<<"("<<i<<","<<temp%num_satellites_per_plane<<"):	"
+						 <<intra_plane_interfaces[temp].GetAddress(1)<<"->"
+						 <<intra_plane_interfaces[temp].GetAddress(0)<< std::endl;
+				std::cout<<"("<<i<<","<<j<<")->"<<"("<<i+1<<","<<j<<"):	"
+						 <<inter_plane_interfaces[i*num_satellites_per_plane+j].GetAddress(0)<<"->"
+						 <<inter_plane_interfaces[i*num_satellites_per_plane+j].GetAddress(1)<<std::endl;
+				std::cout<<"("<<i<<","<<j<<")->"<<"("<<i-1<<","<<j<<"):	"
+						 <<inter_plane_interfaces[(i-1)*num_satellites_per_plane+j].GetAddress(1)<<"->"
+						 <<inter_plane_interfaces[(i-1)*num_satellites_per_plane+j].GetAddress(0)<<std::endl;
+			}
+			std::cout<<std::endl;
+
+
+		}
+	}
+
+	std::cout<<std::endl<<std::endl;
+	uint32_t num_station=ground_stations.GetN();
+	std::cout<<"Now the network have "<<num_station<<" stations."<<std::endl;
+}
+
+void LeoSatelliteConfig::OutputFlowInformation(Ptr<FlowMonitor> flowmon, FlowMonitorHelper &flowmonHelper)
+{
+	  //flowmon->SerializeToXmlFile ((tr_name + ".flowmon").c_str(), false, false);//swd
+	  flowmon->CheckForLostPackets ();
+	      	Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (flowmonHelper.GetClassifier ());
+	              std::map<FlowId, FlowMonitor::FlowStats> stats = flowmon->GetFlowStats ();
+
+	              uint32_t txPacketsum = 0;
+	              uint32_t rxPacketsum = 0;
+	              uint32_t DropPacketsum = 0;
+	              uint32_t LostPacketsum = 0;
+	              double Delaysum = 0;
+
+	              std::cout<< "**********************************"<<std::endl;
+	              for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i =stats.begin (); i != stats.end (); ++i)
+	              {
+	                //NS_LOG_UNCOND(i->second.txPackets);
+	              	Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow (i->first);
+	              	{
+	                 txPacketsum += i->second.txPackets;
+	                 rxPacketsum += i->second.rxPackets;
+	                 LostPacketsum += i->second.lostPackets;
+	                 DropPacketsum += i->second.packetsDropped.size();
+	                 Delaysum += i->second.delaySum.GetSeconds();
+	                 double pdr=double(i->second.rxPackets)/i->second.txPackets;
+	                 std::cout<<t.sourceAddress<<"---"<<t.destinationAddress<<" :"<<pdr<<","<<i->second.rxPackets
+	                		 <<","<<i->second.txPackets<<std::endl;
+	                }
+	              }
+	              std ::cout<< "lost packet:"<<LostPacketsum<<std::endl;
+	              std ::cout<< "drop packet:"<<DropPacketsum<<std::endl;
+	              std ::cout<< "txPacketsum:"<<txPacketsum<<std::endl;
+	              std ::cout<< "rxPacketsum:"<<rxPacketsum<<std::endl;
+	              std ::cout<< "pdr"<<double(rxPacketsum)/txPacketsum<<std::endl;
+	              std::cout<<"delay"<<Delaysum/double(rxPacketsum)<<std::endl;
+}
+
+
 }
 
