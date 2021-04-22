@@ -163,7 +163,7 @@ LeoSatelliteMobilityModel::DoSetPosition (const Vector &position)
 	  m_direction = 1;
   }
 
-  //std::cout<<"m_direction: "<<m_direction << " m_current: "<<m_current<<" m_latitude: "<<m_latitude<<" m_longitude: "<<m_longitude<<std::endl;// swd
+  std::cout<<"m_direction: "<<m_direction << " m_current: "<<m_current<<" m_latitude: "<<m_latitude<<" m_longitude: "<<m_longitude<<std::endl;// swd
 }
 
 Vector

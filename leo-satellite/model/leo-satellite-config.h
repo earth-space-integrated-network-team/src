@@ -45,24 +45,18 @@ public:
   
   void UpdateLinks (); //update the intersatellite links
 
-
-  void PrintGlobalNetInfo(); //print global Network Information including node list, node position, node address, link attribute
-
-
-
   NodeContainer ground_stations; //node container to hold ground stations
-  std::vector<Ipv4InterfaceContainer> ground_station_interfaces;
   std::vector<NodeContainer> plane; //node container for each plane
   std::vector<Ipv4InterfaceContainer> intra_plane_interfaces;
+  std::vector<Ipv4InterfaceContainer> ground_station_interfaces;
 
 private:
   uint32_t num_planes;
   uint32_t num_satellites_per_plane;
   double m_altitude;
 
-  //uint32_t pr;//pr = 0 : no satellite in the polar region ; pr = 1 : more than one satellite in the polar region
-
-  int node_pr[12]={1}; //swd Store the value of pr
+  uint32_t pr;//pr = 0 : no satellite in the polar region ; pr = 1 : more than one satellite in the polar region
+  std::vector<uint32_t> inter_pr; //swd Store the value of pr
 
   std::vector<NetDeviceContainer> intra_plane_devices; //contains net devices for all P2P links for all planes
   std::vector<NetDeviceContainer> inter_plane_devices;
@@ -71,7 +65,6 @@ private:
   std::vector<NetDeviceContainer> ground_station_devices; 
   std::vector<Ptr<CsmaChannel>> ground_station_channels;
   std::vector<uint32_t> ground_station_channel_tracker;
-
   std::vector<Ipv4InterfaceContainer> inter_plane_interfaces;
   
 };
