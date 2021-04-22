@@ -271,8 +271,28 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
     std::cout << "Current Time: " << Simulator::Now().GetSeconds() << ": ground station # " << j << ": x = " << temp.x << ", y = " << temp.y <<std::endl;
   }
 
-  /*
+
   //setting up links between ground stations and their closest satellites
+  double distance;
+  double min_distance=99999.0;
+  for(uint32_t i = 0;i<num_planes;i++)
+  {
+	  for(uint32_t j = 0;j<num_satellites_per_plane;j++)
+	  {
+		  double sat_x=plane[i].Get(j)->GetObject<MobilityModel>()->GetPosition().x;
+		  double sat_y=plane[i].Get(j)->GetObject<MobilityModel>()->GetPosition().y;
+		  double sat_z=plane[i].Get(j)->GetObject<MobilityModel>()->GetPosition().z;
+		  double sta_x=ground_stations.Get(j)->GetObject<MobilityModel> ()->GetPosition().x;
+		  double sta_y=ground_stations.Get(j)->GetObject<MobilityModel> ()->GetPosition().y;
+
+		  distance=;
+	  }
+  }
+
+
+
+
+
   std::cout<<"Setting links between ground stations and satellites"<<std::endl;
   for (uint32_t i=0; i<2; i++)
   {
@@ -329,7 +349,7 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
     this->ground_station_devices.push_back(temp_netdevice_container);
     this->ground_station_channels.push_back(csma_channel);
     this->ground_station_channel_tracker.push_back(closestAdjSat);
-    */
+
   }
 
   //Configure IP Addresses for all NetDevices
