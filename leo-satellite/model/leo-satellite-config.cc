@@ -11,6 +11,7 @@
 #include "leo-satellite-config.h"
 #include <typeinfo>
 #include "ns3/net-device-container.h"
+#include <cmath>
 
 
 namespace ns3 {
@@ -273,27 +274,96 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
 
 
   //setting up links between ground stations and their closest satellites
-  double distance;
-  double min_distance=99999.0;
-  for(uint32_t i = 0;i<num_planes;i++)
+  for(uint32_t kk=0;kk<2;kk++)
   {
-	  for(uint32_t j = 0;j<num_satellites_per_plane;j++)
+	  double distance;
+	  double min_distance=99999.0;
+	  uint32_t min_i;
+	  uint32_t min_j;
+	  for(uint32_t i = 0;i<num_planes;i++)
 	  {
-		  double sat_x=plane[i].Get(j)->GetObject<MobilityModel>()->GetPosition().x;
-		  double sat_y=plane[i].Get(j)->GetObject<MobilityModel>()->GetPosition().y;
-		  double sat_z=plane[i].Get(j)->GetObject<MobilityModel>()->GetPosition().z;
-		  double sta_x=ground_stations.Get(j)->GetObject<MobilityModel> ()->GetPosition().x;
-		  double sta_y=ground_stations.Get(j)->GetObject<MobilityModel> ()->GetPosition().y;
+		  for(uint32_t j = 0;j<num_satellites_per_plane;j++)
+		  {
+			  double sat_x=plane[i].Get(j)->GetObject<MobilityModel>()->GetPosition().x;
+			  double sat_y=plane[i].Get(j)->GetObject<MobilityModel>()->GetPosition().y;
+			  double sat_z=plane[i].Get(j)->GetObject<MobilityModel>()->GetPosition().z;
+			  double gro_x=ground_stations.Get(j)->GetObject<MobilityModel> ()->GetPosition().x;
+			  double gro_y=ground_stations.Get(j)->GetObject<MobilityModel> ()->GetPosition().y;
 
-		  distance=;
+			  //使用球坐标，计算两点间距离
+			  //（r,xita,fai）
+			  sat_x=(90-sat_x)/180*3.1416;
+			  sat_y=(sat_y+180)/180*3.1416;
+			  sat_z+=6371.8;
+			  gro_x=(90-gro_x)/180*3.1416;
+			  gro_y=(180+gro_y)/180*3.1416;
+			  double gro_z=6371.8;
+			  distance=sqrt(pow(sat_z*sin(sat_x)*cos(sat_y)-gro_z*sin(gro_x)*cos(gro_y),2)+
+				        	pow(sat_z*sin(sat_x)*sin(sat_y)-gro_z*sin(gro_x)*sin(gro_y),2)+
+							pow(sat_z*cos(sat_x)-gro_z*cos(gro_x),2));
+			  if(distance<min_distance)
+			  {
+				  min_distance=distance;
+				  min_i=i;
+				  min_j=j;
+			  }
+		  }
 	  }
+	  PointToPointHelper link_gro_sat_helper;
+	  PointToPointHelper badlink;
+	  link_gro_sat_helper.SetChannelAttribute("Delay", TimeValue(Seconds(min_distance*1000/speed_of_light)));
+	  link_gro_sat_helper.SetDeviceAttribute("DataRate", StringValue("5.36Gbps"));
+	  badlink.SetChannelAttribute("Delay", TimeValue(Seconds(2000)));
+	  badlink.SetDeviceAttribute("DataRate", StringValue("1bps"));
+	  for(uint32_t i=0;i<num_planes;i++)
+	  {
+		  for(uint32_t j=0;j<num_satellites_per_plane;j++)
+		  {
+			  NodeContainer temp_gro_sat;
+			  temp_gro_sat.Add(ground_stations.Get(kk));
+			  temp_gro_sat.Add(plane[i].Get(j));
+			  NetDeviceContainer device_gro_sat;
+			  if(i==min_i && j==min_j)
+			  {
+				  device_gro_sat = link_gro_sat_helper.Install(temp_gro_sat.Get(0),temp_gro_sat.Get(1));
+				  std::cout<<"Channel open between ground station "<<kk<<" and satellite ("<<i<<","<<j<<")"<<std::endl;
+				  std::cout<<"With Position of"<<std::endl;
+				  std::cout<<"ground station "<<kk<<":	x:"<<ground_stations.Get(kk)->GetObject<MobilityModel>()->GetPosition().x
+						                          <<"	y:"	<<ground_stations.Get(kk)->GetObject<MobilityModel>()->GetPosition().y
+												  <<std::endl;
+		          std::cout<<"("<<i<<","<<j<<"): "<<"x:"<<plane[i].Get(j)->GetObject<MobilityModel>()->GetPosition().x
+		        		                          <<"	y:"<<plane[i].Get(j)->GetObject<MobilityModel>()->GetPosition().y
+		    									  <<"	z:"<<plane[i].Get(j)->GetObject<MobilityModel>()->GetPosition().z
+		    									  <<std::endl;
+		          Ptr<PointToPointChannel> p2p_channel;
+		          Ptr<Channel> channel;
+		          channel = device_gro_sat.Get(0)->GetChannel();
+		          p2p_channel = channel->GetObject<PointToPointChannel>();
+		          this->ground_station_devices.push_back(device_gro_sat);
+		          this->ground_station_channels.push_back(p2p_channel);
+		          this->ground_station_channel_tracker.push_back(min_i);
+		          this->ground_station_channel_tracker.push_back(min_j);
+
+			  }
+			  else
+			  {
+				  device_gro_sat = badlink.Install(temp_gro_sat.Get(0),temp_gro_sat.Get(1));
+			  }
+
+
+
+
+		  }
+	  }
+
+  //for(uint32_t i=0; i<);
   }
 
 
 
 
 
-  std::cout<<"Setting links between ground stations and satellites"<<std::endl;
+ /* std::cout<<"Setting links between ground stations and satellites"<<std::endl;
   for (uint32_t i=0; i<2; i++)
   {
     Vector gndPos = ground_stations.Get(i)->GetObject<MobilityModel> ()->GetPosition();
@@ -351,6 +421,7 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
     this->ground_station_channel_tracker.push_back(closestAdjSat);
 
   }
+  */
 
   //Configure IP Addresses for all NetDevices
   Ipv4AddressHelper address;
