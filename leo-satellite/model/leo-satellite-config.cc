@@ -253,6 +253,7 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
       planeIndex = 0;
     else
       planeIndex = floor(3*num_planes/7);
+
     //find closest adjacent satellite for ground station
     for (uint32_t j=0; j<this->num_satellites_per_plane; j++)
     {

@@ -83,6 +83,22 @@ PointToPointChannel::Attach (Ptr<PointToPointNetDevice> device)
     }
 }
 
+void
+PointToPointChannel::Detach()
+{
+	m_nDevices=0;
+	m_link[0].m_dst = m_link[0].m_src;
+	m_link[1].m_dst = m_link[1].m_src;
+	m_link[0].m_state = INITIALIZING;
+	m_link[1].m_state = INITIALIZING;
+}
+
+void
+PointToPointChannel::SetDelay(Time delay)
+{
+	m_delay=delay;
+}
+
 bool
 PointToPointChannel::TransmitStart (
   Ptr<const Packet> p,

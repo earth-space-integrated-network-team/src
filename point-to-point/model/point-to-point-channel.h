@@ -71,6 +71,10 @@ public:
    */
   void Attach (Ptr<PointToPointNetDevice> device);
 
+  void Detach ();//添加的自定义函数
+
+  void SetDelay(Time delay);//添加的自定义函数
+
   /**
    * \brief Transmit a packet over this channel
    * \param p Packet to transmit
