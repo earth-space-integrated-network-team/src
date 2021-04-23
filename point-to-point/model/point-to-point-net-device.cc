@@ -196,6 +196,13 @@ PointToPointNetDevice::AddHeader (Ptr<Packet> p, uint16_t protocolNumber)
   p->AddHeader (ppp);
 }
 
+void
+PointToPointNetDevice::ChangeChannel(Ptr<PointToPointChannel> channel)
+{
+	m_channel=channel;
+}
+
+
 bool
 PointToPointNetDevice::ProcessHeader (Ptr<Packet> p, uint16_t& param)
 {
@@ -224,6 +231,13 @@ PointToPointNetDevice::SetDataRate (DataRate bps)
   NS_LOG_FUNCTION (this);
   m_bps = bps;
 }
+
+DataRate
+PointToPointNetDevice::GetDataRate(void) const
+{
+	return m_bps;
+}
+
 
 void
 PointToPointNetDevice::SetInterframeGap (Time t)

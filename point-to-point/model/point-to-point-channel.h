@@ -70,6 +70,7 @@ public:
    * \param device pointer to the netdevice to attach to the channel
    */
   void Attach (Ptr<PointToPointNetDevice> device);
+  void Detach ();
 
   /**
    * \brief Transmit a packet over this channel
@@ -99,6 +100,11 @@ public:
    * \returns Ptr to NetDevice requested
    */
   virtual Ptr<NetDevice> GetDevice (std::size_t i) const;
+  Time MyGetDelay(void) const
+  {
+	  return GetDelay();
+  }
+
 
 protected:
   /**
@@ -106,6 +112,7 @@ protected:
    * \returns Time delay
    */
   Time GetDelay (void) const;
+
 
   /**
    * \brief Check to make sure the link is initialized

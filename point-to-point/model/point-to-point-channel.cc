@@ -69,7 +69,10 @@ PointToPointChannel::Attach (Ptr<PointToPointNetDevice> device)
   NS_ASSERT_MSG (m_nDevices < N_DEVICES, "Only two devices permitted");
   NS_ASSERT (device != 0);
 
+
   m_link[m_nDevices++].m_src = device;
+
+  device->ChangeChannel(this);
 //
 // If we have both devices connected to the channel, then finish introducing
 // the two halves and set the links to IDLE.
@@ -81,6 +84,12 @@ PointToPointChannel::Attach (Ptr<PointToPointNetDevice> device)
       m_link[0].m_state = IDLE;
       m_link[1].m_state = IDLE;
     }
+}
+
+void
+PointToPointChannel::Detach()
+{
+	m_nDevices=0;
 }
 
 bool
