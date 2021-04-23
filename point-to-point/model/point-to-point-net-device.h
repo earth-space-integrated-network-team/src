@@ -30,6 +30,8 @@
 #include "ns3/data-rate.h"
 #include "ns3/ptr.h"
 #include "ns3/mac48-address.h"
+#include "ns3/net-device-queue-interface.h"
+#include "ns3/packet.h"
 
 namespace ns3 {
 
@@ -78,6 +80,7 @@ public:
    */
   PointToPointNetDevice ();
 
+
   /**
    * Destroy a PointToPointNetDevice
    *
@@ -113,6 +116,7 @@ public:
    * \return true if the operation was successful (always true actually)
    */
   bool Attach (Ptr<PointToPointChannel> ch);
+
 
   /**
    * Attach a queue to the PointToPointNetDevice.
@@ -234,6 +238,10 @@ private:
    * \returns the address of the remote device connected to this device
    * through the point to point channel.
    */
+
+
+
+
   Address GetRemote (void) const;
 
   /**

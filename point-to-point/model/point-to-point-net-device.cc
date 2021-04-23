@@ -182,6 +182,7 @@ PointToPointNetDevice::PointToPointNetDevice ()
   NS_LOG_FUNCTION (this);
 }
 
+
 PointToPointNetDevice::~PointToPointNetDevice ()
 {
   NS_LOG_FUNCTION (this);
