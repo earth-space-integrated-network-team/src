@@ -69,7 +69,7 @@ private:
   std::vector<Ptr<PointToPointChannel>> inter_plane_channels;
   std::vector<uint32_t> inter_plane_channel_tracker; //this will have the node from the adjacent plane that is currently connected
   std::vector<NetDeviceContainer> ground_station_devices; 
-  std::vector<Ptr<PointToPointChannel>> ground_station_channels;
+  std::vector<Ptr<CsmaChannel>> ground_station_channels;
   std::vector<uint32_t> ground_station_channel_tracker;
 
   std::vector<Ipv4InterfaceContainer> inter_plane_interfaces;

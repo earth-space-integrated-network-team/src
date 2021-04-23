@@ -274,6 +274,7 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
 
 
   //setting up links between ground stations and their closest satellites
+  /*
   for(uint32_t kk=0;kk<2;kk++)
   {
 	  double distance;
@@ -359,11 +360,12 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
   //for(uint32_t i=0; i<);
   }
 
+*/
 
 
 
 
- /* std::cout<<"Setting links between ground stations and satellites"<<std::endl;
+  std::cout<<"Setting links between ground stations and satellites"<<std::endl;
   for (uint32_t i=0; i<2; i++)
   {
     Vector gndPos = ground_stations.Get(i)->GetObject<MobilityModel> ()->GetPosition();
@@ -421,7 +423,7 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
     this->ground_station_channel_tracker.push_back(closestAdjSat);
 
   }
-  */
+
 
   //Configure IP Addresses for all NetDevices
   Ipv4AddressHelper address;
