@@ -40,20 +40,30 @@ main (int argc, char *argv[])
   LeoSatelliteConfig sat_network(n_planes, n_sats_per_plane, altitude);
   
 
+
   UdpEchoServerHelper echoServer (9);
 
   ApplicationContainer serverApps = echoServer.Install(sat_network.ground_stations.Get(1));
+
   serverApps.Start (Seconds (1.0));
   serverApps.Stop (Seconds (10.0));
 
-  UdpEchoClientHelper echoClient (sat_network.ground_station_interfaces[1].GetAddress(0), 9);
+  std::cout<<"sat_network.ground_station_interfaces.size() is "<<sat_network.ground_station_interfaces.size()<<std::endl;
+ // sat_network.ground_station_interfaces[1].GetAddress(0);
+
+
+
+  UdpEchoClientHelper echoClient (sat_network.ground_station_interfaces[0].GetAddress(1), 9);
   echoClient.SetAttribute("MaxPackets", UintegerValue (20));
   echoClient.SetAttribute("Interval", TimeValue(Seconds(100.0)));
   echoClient.SetAttribute("PacketSize", UintegerValue (1024));
 
+
   ApplicationContainer clientApps = echoClient.Install (sat_network.ground_stations.Get(0));
   clientApps.Start (Seconds (2.0));
   clientApps.Stop (Seconds (10.0));
+
+
 
   FlowMonitorHelper flowmonHelper;
   flowmonHelper.InstallAll();

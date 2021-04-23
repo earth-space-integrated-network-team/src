@@ -48,8 +48,9 @@ FreePointToPointHelper::Install(NodeContainer c,const AttributeValue &datarate)
     NetDeviceContainer container;
     for (uint32_t i = 0; i < num; i++)
     {
+    	ob_device.Set("DataRate",datarate);
         Ptr<PointToPointNetDevice> dev = ob_device.Create<PointToPointNetDevice>();
-        ob_device.Set("DataRate",datarate);
+
         dev->SetAddress(Mac48Address::Allocate());
         c.Get(i)->AddDevice(dev);
         Ptr<Queue<Packet> > queue = ob_queue.Create<Queue<Packet> >();

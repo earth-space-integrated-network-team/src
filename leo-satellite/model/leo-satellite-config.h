@@ -43,7 +43,7 @@ public:
   virtual ~LeoSatelliteConfig ();
   virtual TypeId GetInstanceTypeId (void) const;
   
-  void UpdateLinks (); //update the intersatellite links
+  //void UpdateLinks (); //update the intersatellite links
 
 
   void PrintGlobalNetInfo(); //print global Network Information including node list, node position, node address, link attribute
@@ -54,6 +54,8 @@ public:
   std::vector<Ipv4InterfaceContainer> ground_station_interfaces;
   std::vector<NodeContainer> plane; //node container for each plane
   std::vector<Ipv4InterfaceContainer> intra_plane_interfaces;
+
+  double DistanceOfTwoPoints(double r1,double xita1,double fai1,double r2,double xita2,double fai2) const;
 
 private:
   uint32_t num_planes;
@@ -69,7 +71,7 @@ private:
   std::vector<Ptr<PointToPointChannel>> inter_plane_channels;
   std::vector<uint32_t> inter_plane_channel_tracker; //this will have the node from the adjacent plane that is currently connected
   std::vector<NetDeviceContainer> ground_station_devices; 
-  std::vector<Ptr<CsmaChannel>> ground_station_channels;
+  std::vector<Ptr<PointToPointChannel>> ground_station_channels;
   std::vector<uint32_t> ground_station_channel_tracker;
 
   std::vector<Ipv4InterfaceContainer> inter_plane_interfaces;
