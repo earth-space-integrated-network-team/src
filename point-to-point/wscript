@@ -9,6 +9,7 @@ def build(bld):
         'model/point-to-point-remote-channel.cc',
         'model/ppp-header.cc',
         'helper/point-to-point-helper.cc',
+        'helper/free-point-to-point-helper.cc',
         ]
 
     module_test = bld.create_ns3_module_test_library('point-to-point')
@@ -24,6 +25,7 @@ def build(bld):
         'model/point-to-point-remote-channel.h',
         'model/ppp-header.h',
         'helper/point-to-point-helper.h',
+        'helper/free-point-to-point-helper.h',
         ]
 
     if (bld.env['ENABLE_EXAMPLES']):
