@@ -72,6 +72,8 @@ public:
   void Attach (Ptr<PointToPointNetDevice> device);
   void Detach ();
 
+  void SetDelay(Time delay);
+
   /**
    * \brief Transmit a packet over this channel
    * \param p Packet to transmit
