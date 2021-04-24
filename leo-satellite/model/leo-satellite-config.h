@@ -43,7 +43,7 @@ public:
   virtual ~LeoSatelliteConfig ();
   virtual TypeId GetInstanceTypeId (void) const;
   
-  //void UpdateLinks (); //update the intersatellite links
+  void UpdateLinks (); //update the intersatellite links
 
 
   void PrintGlobalNetInfo(); //print global Network Information including node list, node position, node address, link attribute

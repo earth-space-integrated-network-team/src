@@ -117,6 +117,8 @@ public:
    */
   bool Attach (Ptr<PointToPointChannel> ch);
 
+  void Detach();
+
 
   /**
    * Attach a queue to the PointToPointNetDevice.
@@ -293,6 +295,8 @@ private:
    * It calls also the linkChange callback.
    */
   void NotifyLinkUp (void);
+
+  void OffLinkUp(void);
 
   /**
    * Enumeration of the states of the transmit machine of the net device.

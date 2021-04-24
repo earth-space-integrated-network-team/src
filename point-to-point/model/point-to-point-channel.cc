@@ -90,8 +90,8 @@ void
 PointToPointChannel::Detach()
 {
 	m_nDevices=0;
-	m_link[0].m_dst = m_link[0].m_src;
-	m_link[1].m_dst = m_link[1].m_src;
+	m_link[0].m_dst = 0;
+	m_link[1].m_dst = 0;
 	m_link[0].m_state = INITIALIZING;
 	m_link[1].m_state = INITIALIZING;
 }

@@ -321,12 +321,20 @@ PointToPointNetDevice::Attach (Ptr<PointToPointChannel> ch)
   m_channel->Attach (this);
 
   //
-  // This device is up whenever it is attached to a channel.  A better plan
-  // would be to have the link come up when both devices are attached, but this
-  // is not done for now.
+//   This device is up whenever it is attached to a channel.  A better plan
+//   would be to have the link come up when both devices are attached, but this
+//   is not done for now.
   //
   NotifyLinkUp ();
   return true;
+}
+
+void
+PointToPointNetDevice::Detach()
+{
+	m_channel = 0;
+	//m_channel->Detach();
+	OffLinkUp();
 }
 
 void
@@ -406,6 +414,13 @@ PointToPointNetDevice::NotifyLinkUp (void)
   NS_LOG_FUNCTION (this);
   m_linkUp = true;
   m_linkChangeCallbacks ();
+}
+
+void
+PointToPointNetDevice::OffLinkUp(void)
+{
+	m_linkUp = false;
+	m_linkChangeCallbacks();
 }
 
 void
