@@ -15,6 +15,7 @@
 #include "ns3/free-point-to-point-helper.h"
 
 
+
 namespace ns3 {
 
 NS_OBJECT_ENSURE_REGISTERED (LeoSatelliteConfig);
@@ -49,6 +50,7 @@ TypeId LeoSatelliteConfig::GetInstanceTypeId (void) const
 //constructor
 LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satellites_per_plane, double altitude)
 {
+
   //pr = 0;//pr = 0 : no satellite in the polar region ; pr = 1 : more than one satellite in the polar region
   this->num_planes = num_planes;
   this->num_satellites_per_plane = num_satellites_per_plane;
@@ -102,6 +104,9 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
 
 
      InternetStackHelper stack;
+     AodvHelper aodv;
+
+     stack.SetRoutingHelper(aodv);
 
      stack.Install(temp_plane);
      //std::cout<<"---------------------"<< temp_plane.Get(0)->GetNDevices()<<std::endl;
@@ -255,6 +260,9 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
 
   //Install IP stack
   InternetStackHelper stack;
+  AodvHelper aodv;
+
+  stack.SetRoutingHelper(aodv);
 
   stack.Install(ground_stations);
   for (int j = 0; j<2; j++)
@@ -276,6 +284,11 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
   FreePointToPointHelper p2p_for_all_nodes;
   NetDeviceContainer all_nodes_p2p_devices;
   all_nodes_p2p_devices = p2p_for_all_nodes.Install(all_nodes,StringValue("5.36Gbps"));
+
+  for(uint32_t kk =0;kk<all_nodes_p2p_devices.GetN();kk++)
+  {
+	  all_nodes_p2p_devices.Get(kk)->GetObject<PointToPointNetDevice>()->Detach();
+  }
 
   //setting up links between ground stations and their closest satellites
 
@@ -322,8 +335,12 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
 	  Ptr<PointToPointChannel> gro_sat_channel = ob_channel.Create<PointToPointChannel> ();
 
 	  gro_sat_channel->Detach();
-	  gro_sat_channel->Attach(all_nodes_p2p_devices.Get(kk)->GetObject<PointToPointNetDevice>());
-	  gro_sat_channel->Attach(all_nodes_p2p_devices.Get(2+min_i*num_satellites_per_plane+min_j)->GetObject<PointToPointNetDevice>());
+	  //gro_sat_channel->Attach(all_nodes_p2p_devices.Get(kk)->GetObject<PointToPointNetDevice>());
+	  //gro_sat_channel->Attach(all_nodes_p2p_devices.Get(2+min_i*num_satellites_per_plane+min_j)->GetObject<PointToPointNetDevice>());
+	  //gro_sat_channel->Detach();
+	  all_nodes_p2p_devices.Get(kk)->GetObject<PointToPointNetDevice>()->Attach(gro_sat_channel);
+	  all_nodes_p2p_devices.Get(2+min_i*num_satellites_per_plane+min_j)->GetObject<PointToPointNetDevice>()->Attach(gro_sat_channel);
+
 	  this->ground_station_channels.push_back(gro_sat_channel);
 	  this->ground_station_channel_tracker.push_back(min_i);
 	  this->ground_station_channel_tracker.push_back(min_j);
@@ -357,9 +374,17 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
   }
 
   //Populate Routing Tables
-  std::cout<<"Populating Routing Tables"<<std::endl;
-  //Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
-  std::cout<<"Finished Populating Routing Tables"<<std::endl;
+
+
+
+//  std::cout<<"Populating Routing Tables"<<std::endl;
+ // Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
+//  std::cout<<"Finished Populating Routing Tables"<<std::endl;
+
+
+
+
+
   PrintGlobalNetInfo();
 
 }

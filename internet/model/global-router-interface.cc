@@ -702,6 +702,7 @@ GlobalRouter::DiscoverLSAs ()
       else if (ndLocal->IsPointToPoint () )
         {
           NS_LOG_LOGIC ("Point=to-point link");
+          if(ndLocal->GetChannel()==0) continue;
           ProcessPointToPointLink (ndLocal, pLSA);
         }
       else
