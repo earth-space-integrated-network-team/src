@@ -56,6 +56,7 @@ public:
   std::vector<Ipv4InterfaceContainer> ground_station_interfaces;
   std::vector<NodeContainer> plane; //node container for each plane
   std::vector<Ipv4InterfaceContainer> intra_plane_interfaces;
+  std::vector<Ipv4InterfaceContainer> inter_plane_interfaces;
 
   double DistanceOfTwoPoints(double r1,double xita1,double fai1,double r2,double xita2,double fai2) const;
 
@@ -76,8 +77,8 @@ private:
   std::vector<Ptr<PointToPointChannel>> ground_station_channels;
   std::vector<uint32_t> ground_station_channel_tracker;
 
-  std::vector<Ipv4InterfaceContainer> inter_plane_interfaces;
   
+
 };
   
 }
