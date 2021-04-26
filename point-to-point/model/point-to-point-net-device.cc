@@ -315,6 +315,14 @@ PointToPointNetDevice::Attach (Ptr<PointToPointChannel> ch)
 }
 
 void
+PointToPointNetDevice::Detach()
+{
+	m_channel = 0;
+	//m_channel->Detach();
+	OffLinkUp();
+}
+
+void
 PointToPointNetDevice::SetQueue (Ptr<Queue<Packet> > q)
 {
   NS_LOG_FUNCTION (this << q);
@@ -391,6 +399,13 @@ PointToPointNetDevice::NotifyLinkUp (void)
   NS_LOG_FUNCTION (this);
   m_linkUp = true;
   m_linkChangeCallbacks ();
+}
+
+void
+PointToPointNetDevice::OffLinkUp(void)
+{
+	m_linkUp = false;
+	m_linkChangeCallbacks();
 }
 
 void

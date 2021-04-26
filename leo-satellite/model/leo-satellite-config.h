@@ -25,6 +25,8 @@
 #include "ns3/ipv4-global-routing-helper.h"
 #include "ns3/applications-module.h"
 #include "ns3/flow-monitor-module.h"//swd
+#include "ns3/aodv-module.h"
+#include "ns3/olsr-module.h"
 
 
 namespace ns3 {
@@ -50,10 +52,13 @@ public:
 
   void OutputFlowInformation(Ptr<FlowMonitor> flowmon, FlowMonitorHelper &flowmonHelper);//swd流量检测函数
 
+  double DistanceOfTwoPoints(double r1,double xita1,double fai1,double r2,double xita2,double fai2) const;//用球坐标计算两点间距离
+
   NodeContainer ground_stations; //node container to hold ground stations
   std::vector<NodeContainer> plane; //node container for each plane
   std::vector<Ipv4InterfaceContainer> intra_plane_interfaces;
   std::vector<Ipv4InterfaceContainer> ground_station_interfaces;
+  std::vector<Ipv4InterfaceContainer> inter_plane_interfaces;
 
 private:
   uint32_t num_planes;
@@ -68,9 +73,8 @@ private:
   std::vector<Ptr<PointToPointChannel>> inter_plane_channels;
   std::vector<uint32_t> inter_plane_channel_tracker; //this will have the node from the adjacent plane that is currently connected
   std::vector<NetDeviceContainer> ground_station_devices; 
-  std::vector<Ptr<CsmaChannel>> ground_station_channels;
+  std::vector<Ptr<PointToPointChannel>> ground_station_channels;
   std::vector<uint32_t> ground_station_channel_tracker;
-  std::vector<Ipv4InterfaceContainer> inter_plane_interfaces;
   
 };
   

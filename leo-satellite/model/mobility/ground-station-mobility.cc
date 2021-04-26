@@ -102,15 +102,15 @@ GroundStationMobilityModel::DoGetPosition (void) const
 
   double m_earthRotationSpeed=15.0/(60*60);  //the speed of the earth's rotation: 15 degreee/h
   double currentTime = Simulator::Now().GetSeconds();  //psq
-  std::cout <<"currentTime: "<<currentTime<<" m_time"<<m_time<<std::endl;//swd
+  //std::cout <<"currentTime: "<<currentTime<<" m_time"<<m_time<<std::endl;//swd
   double deltatime=fmod((currentTime - m_time),24.0*60.0*60.0);      //psq
-  std::cout <<"deltatime: "<<deltatime<<std::endl;//swd
+  //std::cout <<"deltatime: "<<deltatime<<std::endl;//swd
   double newlongtitude= m_longitude+deltatime*m_earthRotationSpeed;     //psq
-  std::cout <<"newlongtitude: "<<newlongtitude<<std::endl;//swd
+  //std::cout <<"newlongtitude: "<<newlongtitude<<std::endl;//swd
   // Update longitude and time values for this object
   m_longitude = newlongtitude;
   m_time = currentTime;
-  std::cout <<Simulator::Now().GetSeconds() <<  "The location of groundstation  "<< ": x = " << m_latitude << ", y = " << m_longitude << std::endl;//swd
+  //std::cout <<Simulator::Now().GetSeconds() <<  "The location of groundstation  "<< ": x = " << m_latitude << ", y = " << m_longitude << std::endl;//swd
   // Create vector to return
   Vector currentPosition = Vector(m_latitude, m_longitude, 0);
   return currentPosition;

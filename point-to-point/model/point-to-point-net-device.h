@@ -110,6 +110,10 @@ public:
    */
   bool Attach (Ptr<PointToPointChannel> ch);
 
+  void Detach();//自定义函数
+
+
+
   /**
    * Attach a queue to the PointToPointNetDevice.
    *
@@ -282,6 +286,7 @@ private:
    */
   void NotifyLinkUp (void);
 
+  void OffLinkUp(void);//自定义函数
   /**
    * Enumeration of the states of the transmit machine of the net device.
    */

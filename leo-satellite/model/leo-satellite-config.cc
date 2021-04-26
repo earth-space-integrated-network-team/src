@@ -92,12 +92,12 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
        std::cout << Simulator::Now().GetSeconds() << ": plane # "<< i << " node # " <<num_satellites_per_plane - j<< ": x = " << pos.x << ", y = " << pos.y << ", z = " << pos.z << std::endl;
        temp_plane.Add(temp.Get(total_num_satellites/2 + i*num_satellites_per_plane/2 + j - 1));
      }
-     InternetStackHelper stack;
-     //OlsrHelper olsr;    //swd
-     //Ipv4ListRoutingHelper list;//swd
-     //list.Add(olsr,100);//swd
-     //stack.SetRoutingHelper(list);//swd
-     stack.Install(temp_plane);
+//     InternetStackHelper stack;
+//     //OlsrHelper olsr;    //swd
+//     //Ipv4ListRoutingHelper list;//swd
+//     //list.Add(olsr,100);//swd
+//     //stack.SetRoutingHelper(list);//swd
+//     stack.Install(temp_plane);
      this->plane.push_back(temp_plane);//存放所有卫星，（0,0）~（0,3），（1,0）~（1,3）......
   }
 
@@ -228,73 +228,156 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
   //std::cout << "groundMobility.Install(ground_stations);" << std::endl;//swd
   groundMobility.Install(ground_stations);
 
-  //Install IP stack
-  InternetStackHelper stack;
-  //OlsrHelper olsr2;    //swd
-  //Ipv4ListRoutingHelper list2;//swd
-  //list2.Add(olsr2,100);//swd
-  //stack.SetRoutingHelper(list2);//swd
-  stack.Install(ground_stations);
+//  //Install IP stack
+//  InternetStackHelper stack;
+//  //OlsrHelper olsr2;    //swd
+//  //Ipv4ListRoutingHelper list2;//swd
+//  //list2.Add(olsr2,100);//swd
+//  //stack.SetRoutingHelper(list2);//swd
+//  stack.Install(ground_stations);
   for (int j = 0; j<2; j++)
   {
     Vector temp = ground_stations.Get(j)->GetObject<MobilityModel> ()->GetPosition();
     std::cout<< "Current Time: " << Simulator::Now().GetSeconds() << ": ground station # " << j << ": x = " << temp.x << ", y = " << temp.y <<std::endl;
   }
+
+  NodeContainer all_nodes;//将地面站与卫星节点全部加入到all_nodes中
+  all_nodes.Add(ground_stations.Get(0));
+  all_nodes.Add(ground_stations.Get(1));
+  for(uint32_t i=0;i<num_planes;i++)
+  {
+	  for(uint32_t j=0;j<num_satellites_per_plane;j++)
+	  {
+		  all_nodes.Add(plane[i].Get(j));
+	  }
+  }
+
+  //Install IP stack
+  InternetStackHelper stack;
+  Ipv4ListRoutingHelper list;
+  //OlsrHelper olsr;
+  AodvHelper aodv;
+  list.Add(aodv,100);
+  //list.Add(olsr,100);
+  stack.SetRoutingHelper(list);
+  stack.Install(all_nodes);
+
+
+  FreePointToPointHelper p2p_for_all_nodes;
+  NetDeviceContainer all_nodes_p2p_devices;
+  all_nodes_p2p_devices = p2p_for_all_nodes.Install(all_nodes,StringValue("5.36Gbps"));
+
+  for(uint32_t kk =0;kk<all_nodes_p2p_devices.GetN();kk++)
+  {
+	  all_nodes_p2p_devices.Get(kk)->GetObject<PointToPointNetDevice>()->Detach();
+  }
+
   //setting up links between ground stations and their closest satellites
   std::cout<<"Setting links between ground stations and satellites"<<std::endl;
-  for (uint32_t i=0; i<2; i++)
+
+  for(uint32_t kk=0;kk<2;kk++)
   {
-    Vector gndPos = ground_stations.Get(i)->GetObject<MobilityModel> ()->GetPosition();
-    std::cout << Simulator::Now().GetSeconds() << ": ground station # " << i << ": x = " << gndPos.x << ", y = " << gndPos.y << std::endl;//swd
-    uint32_t closestAdjSat = 0;
-    uint32_t closestAdjSatDist = 0;
-    uint32_t planeIndex;  //未考虑地球自转情况下，基站设于planeIndex轨道正下方
-    if (i == 0)
-      planeIndex = 0;
-    else
-      planeIndex = floor(3*num_planes/7);
+	  double distance;
+	  double min_distance=99999.0;
+	  uint32_t min_i;
+	  uint32_t min_j;
+	  for(uint32_t i = 0;i<num_planes;i++)
+	  {
+		  for(uint32_t j = 0;j<num_satellites_per_plane;j++)
+		  {
+			  double sat_x=plane[i].Get(j)->GetObject<MobilityModel>()->GetPosition().x;
+			  double sat_y=plane[i].Get(j)->GetObject<MobilityModel>()->GetPosition().y;
+			  double sat_z=plane[i].Get(j)->GetObject<MobilityModel>()->GetPosition().z;
+			  double gro_x=ground_stations.Get(kk)->GetObject<MobilityModel> ()->GetPosition().x;
+			  double gro_y=ground_stations.Get(kk)->GetObject<MobilityModel> ()->GetPosition().y;
+			  //使用球坐标，计算两点间距离
+			  //（r,xita,fai）
+			  sat_x=(90-sat_x)/180*3.1416;
+			  sat_y=(sat_y+180)/180*3.1416;
+			  sat_z+=6371.8;
+			  gro_x=(90-gro_x)/180*3.1416;
+			  gro_y=(180+gro_y)/180*3.1416;
+			  double gro_z=6371.8;
+			  distance=DistanceOfTwoPoints(sat_z,sat_x,sat_y,gro_z,gro_x,gro_y);
+			  if(distance<min_distance)
+			  {
+				  min_distance=distance;
+				  min_i=i;
+				  min_j=j;
+			  }
+		  }
+	  }
 
-    //find closest adjacent satellite for ground station
-    for (uint32_t j=0; j<this->num_satellites_per_plane; j++)
-    {
-      Vector pos = this->plane[planeIndex].Get(j)->GetObject<MobilityModel>()->GetPosition();
-      double temp_dist = CalculateDistanceGroundToSat(gndPos,pos);
-      if((temp_dist < closestAdjSatDist) || (j==0))
-      {
-        closestAdjSatDist = temp_dist;
-        closestAdjSat = j;
-      }
-    }
-    double delay = (closestAdjSatDist*1000)/speed_of_light;
-    CsmaHelper ground_station_link_helper;
-    ground_station_link_helper.SetChannelAttribute("DataRate", StringValue ("50Mbps"));//swd
-    ground_station_link_helper.SetChannelAttribute("Delay", TimeValue(Seconds(delay)));
+	  std::cout<<"Ground_station: "<<kk<<" <-> "<<"Satellite: "<<"("<<min_i<<","<<min_j<<")"<<std::endl;
 
-    std::cout<<"Channel open between ground station " << i << " and plane " << planeIndex << " satellite "<<closestAdjSat<<" with distance "<<closestAdjSatDist<< "km and delay of "<<delay<<" seconds"<<std::endl;
-
-    NodeContainer temp_node_container;
-    temp_node_container.Add(ground_stations.Get(i));
-    temp_node_container.Add(this->plane[planeIndex]);
-    NetDeviceContainer temp_netdevice_container;
-    temp_netdevice_container = ground_station_link_helper.Install(temp_node_container);
-    Ptr<CsmaChannel> csma_channel;
-    Ptr<Channel> channel;
-    channel = temp_netdevice_container.Get(0)->GetChannel();
-    csma_channel = channel->GetObject<CsmaChannel> ();
-
-    for (uint32_t k=0; k<num_satellites_per_plane; k++)
-    {
-      if (closestAdjSat != k)
-      {
-        csma_channel->Detach(temp_netdevice_container.Get(k+1)->GetObject<CsmaNetDevice> ());//Decoupling redundant ground-satellite links
-      }
-    }
-
-        
-    this->ground_station_devices.push_back(temp_netdevice_container);
-    this->ground_station_channels.push_back(csma_channel);
-    this->ground_station_channel_tracker.push_back(closestAdjSat);
+	  ObjectFactory ob_channel;
+	  ob_channel.SetTypeId("ns3::PointToPointChannel");
+	  ob_channel.Set("Delay",TimeValue(Seconds(min_distance*1000/speed_of_light)));
+	  Ptr<PointToPointChannel> gro_sat_channel = ob_channel.Create<PointToPointChannel> ();
+	  gro_sat_channel->Detach();
+	  all_nodes_p2p_devices.Get(kk)->GetObject<PointToPointNetDevice>()->Attach(gro_sat_channel);
+	  all_nodes_p2p_devices.Get(2+min_i*num_satellites_per_plane+min_j)->GetObject<PointToPointNetDevice>()->Attach(gro_sat_channel);
+	  this->ground_station_channels.push_back(gro_sat_channel);
+	  this->ground_station_channel_tracker.push_back(min_i);
+	  this->ground_station_channel_tracker.push_back(min_j);
   }
+  this->ground_station_devices.push_back(all_nodes_p2p_devices);
+
+
+
+//  for (uint32_t i=0; i<2; i++)
+//  {
+//    Vector gndPos = ground_stations.Get(i)->GetObject<MobilityModel> ()->GetPosition();
+//    std::cout << Simulator::Now().GetSeconds() << ": ground station # " << i << ": x = " << gndPos.x << ", y = " << gndPos.y << std::endl;//swd
+//    uint32_t closestAdjSat = 0;
+//    uint32_t closestAdjSatDist = 0;
+//    uint32_t planeIndex;  //未考虑地球自转情况下，基站设于planeIndex轨道正下方
+//    if (i == 0)
+//      planeIndex = 0;
+//    else
+//      planeIndex = floor(3*num_planes/7);
+//
+//    //find closest adjacent satellite for ground station
+//    for (uint32_t j=0; j<this->num_satellites_per_plane; j++)
+//    {
+//      Vector pos = this->plane[planeIndex].Get(j)->GetObject<MobilityModel>()->GetPosition();
+//      double temp_dist = CalculateDistanceGroundToSat(gndPos,pos);
+//      if((temp_dist < closestAdjSatDist) || (j==0))
+//      {
+//        closestAdjSatDist = temp_dist;
+//        closestAdjSat = j;
+//      }
+//    }
+//    double delay = (closestAdjSatDist*1000)/speed_of_light;
+//    CsmaHelper ground_station_link_helper;
+//    ground_station_link_helper.SetChannelAttribute("DataRate", StringValue ("50Mbps"));//swd
+//    ground_station_link_helper.SetChannelAttribute("Delay", TimeValue(Seconds(delay)));
+//
+//    std::cout<<"Channel open between ground station " << i << " and plane " << planeIndex << " satellite "<<closestAdjSat<<" with distance "<<closestAdjSatDist<< "km and delay of "<<delay<<" seconds"<<std::endl;
+//
+//    NodeContainer temp_node_container;
+//    temp_node_container.Add(ground_stations.Get(i));
+//    temp_node_container.Add(this->plane[planeIndex]);
+//    NetDeviceContainer temp_netdevice_container;
+//    temp_netdevice_container = ground_station_link_helper.Install(temp_node_container);
+//    Ptr<CsmaChannel> csma_channel;
+//    Ptr<Channel> channel;
+//    channel = temp_netdevice_container.Get(0)->GetChannel();
+//    csma_channel = channel->GetObject<CsmaChannel> ();
+//
+//    for (uint32_t k=0; k<num_satellites_per_plane; k++)
+//    {
+//      if (closestAdjSat != k)
+//      {
+//        csma_channel->Detach(temp_netdevice_container.Get(k+1)->GetObject<CsmaNetDevice> ());//Decoupling redundant ground-satellite links
+//      }
+//    }
+//
+//
+//    this->ground_station_devices.push_back(temp_netdevice_container);
+//    this->ground_station_channels.push_back(csma_channel);
+//    this->ground_station_channel_tracker.push_back(closestAdjSat);
+//  }
 
   //Configure IP Addresses for all NetDevices
   Ipv4AddressHelper address;
@@ -306,37 +389,28 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
   {
     address.NewNetwork();
     this->intra_plane_interfaces.push_back(address.Assign(this->intra_plane_devices[i]));
-    std::cout<<" "<<intra_plane_interfaces[i].GetAddress(0)<<" "<<intra_plane_interfaces[i].GetAddress(1)<<std::endl;//swd
+    //std::cout<<" "<<intra_plane_interfaces[i].GetAddress(0)<<" "<<intra_plane_interfaces[i].GetAddress(1)<<std::endl;//swd
   }
   
   //configuring IP Addresses for InterPlane devices
-  std::cout<<"************************************************"<<std::endl;//swd
   for(uint32_t i=0; i< this->inter_plane_devices.size(); i++)
   {
     address.NewNetwork();
     this->inter_plane_interfaces.push_back(address.Assign(this->inter_plane_devices[i]));
-    std::cout<<" "<<inter_plane_interfaces[i].GetAddress(0)<<" "<<inter_plane_interfaces[i].GetAddress(1)<<std::endl;//swd
+    //std::cout<<" "<<inter_plane_interfaces[i].GetAddress(0)<<" "<<inter_plane_interfaces[i].GetAddress(1)<<std::endl;//swd
   }
 
   //configuring IP Addresses for Ground devices
-  for(uint32_t i=0; i< this->ground_station_devices.size(); i++)
+  for(uint32_t i =0;i< this->ground_station_devices.size();i++)
   {
-    address.NewNetwork();
-    this->ground_station_interfaces.push_back(address.Assign(this->ground_station_devices[i]));
-    for(uint32_t j=1; j<= this->num_satellites_per_plane; j++)
-    {
-      if(j != this->ground_station_channel_tracker[i] + 1)
-      {
-        std::pair< Ptr< Ipv4 >, uint32_t > interface = this->ground_station_interfaces[i].Get(j);
-        interface.first->SetDown(interface.second);
-      }
-    }
+	  address.NewNetwork();
+	  this->ground_station_interfaces.push_back(address.Assign(this->ground_station_devices[i]));
   }
 
   //Populate Routing Tables
-  std::cout<<"Populating Routing Tables"<<std::endl;
-  Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
-  std::cout<<"Finished Populating Routing Tables"<<std::endl;
+ //std::cout<<"Populating Routing Tables"<<std::endl;
+ // Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
+  //std::cout<<"Finished Populating Routing Tables"<<std::endl;
   PrintGlobalNetInfo();
 }
 
@@ -399,54 +473,116 @@ void LeoSatelliteConfig::UpdateLinks()  //swd
 
 	std::cout<<"Updating links between ground stations and their closest satellites:"<<std::endl;
 	//updating links between ground stations and their closest satellites
-	for (uint32_t i=0; i<2; i++)
-	{
-		Vector gndPos = ground_stations.Get(i)->GetObject<MobilityModel> ()->GetPosition();
-	    uint32_t closestAdjSat = 0;
-	    uint32_t closestAdjSatDist = 0;
-	    uint32_t planeIndex;
-	    if (i == 0)
-	      planeIndex = 0;
-	    else
-	      planeIndex = floor(3*num_planes/7);
-	    //find closest adjacent satellite for ground station
-	    for (uint32_t j=0; j<this->num_satellites_per_plane; j++)
-	    {
-	      Vector pos = this->plane[planeIndex].Get(j)->GetObject<MobilityModel>()->GetPosition();
-	      double temp_dist = CalculateDistanceGroundToSat(gndPos,pos);
-	      if((temp_dist < closestAdjSatDist) || (j==0))
-	      {
-	        closestAdjSatDist = temp_dist;
-	        closestAdjSat = j;
-	      }
-	    }
 
-	    uint32_t currAdjNodeID = this->ground_station_channel_tracker[i];
-	    if(currAdjNodeID == closestAdjSat)
-	    {
-	      double new_delay = (closestAdjSatDist*1000)/speed_of_light;
-	      this->ground_station_channels[i]->SetAttribute("Delay", TimeValue(Seconds(new_delay)));
-	      std::cout<<"Channel updated between ground station : "<<i<<" and plane : "<<planeIndex<<" satellite : "<<closestAdjSat<< " with distance "<<closestAdjSatDist<< "km and delay of "<<new_delay<<" seconds"<<std::endl;
-	    }
-	    else
-	    {
-	    	this->ground_station_channels[i]->Detach(this->ground_station_devices[i].Get(currAdjNodeID+1)->GetObject<CsmaNetDevice> ());
-	        std::pair< Ptr< Ipv4 >, uint32_t> interface = this->ground_station_interfaces[i].Get(currAdjNodeID+1);
-	        interface.first->SetDown(interface.second);
-	        this->ground_station_channels[i]->Reattach(this->ground_station_devices[i].Get(closestAdjSat+1)->GetObject<CsmaNetDevice> ());
-	        interface = this->ground_station_interfaces[i].Get(closestAdjSat+1);
-	        interface.first->SetUp(interface.second);
-	        this->ground_station_channel_tracker[i] = closestAdjSat;
-	        double new_delay = (closestAdjSatDist*1000)/speed_of_light;
-	        this->ground_station_channels[i]->SetAttribute("Delay", TimeValue(Seconds(new_delay)));
-	        std::cout<<"New channel between ground station : "<<i<<" and plane : "<<planeIndex<<" satellite : "<<closestAdjSat<< " with distance "<<closestAdjSatDist<< "km and delay of "<<new_delay<<" seconds"<<std::endl;
-	    }
+	std::cout<<"The location of all stations:"<<std::endl;
+	for(uint32_t i=0;i<2;i++)
+	{
+		Vector StationPos = this->ground_stations.Get(i)->GetObject<MobilityModel>()->GetPosition();
+		std::cout << Simulator::Now().GetSeconds() << ": station # "<< i << ": x = " << StationPos.x << ", y = " << StationPos.y << ", z = " << StationPos.z << std::endl;
 	}
 
+
+	for(uint32_t kk=0;kk<2;kk++)
+	{
+		double distance;
+		double min_distance=99999.0;
+		uint32_t min_i;
+		uint32_t min_j;
+		for(uint32_t i = 0;i<num_planes;i++)
+		{
+			for(uint32_t j = 0;j<num_satellites_per_plane;j++)
+			{
+				double sat_x=plane[i].Get(j)->GetObject<MobilityModel>()->GetPosition().x;
+				double sat_y=plane[i].Get(j)->GetObject<MobilityModel>()->GetPosition().y;
+				double sat_z=plane[i].Get(j)->GetObject<MobilityModel>()->GetPosition().z;
+				double gro_x=ground_stations.Get(kk)->GetObject<MobilityModel> ()->GetPosition().x;
+				double gro_y=ground_stations.Get(kk)->GetObject<MobilityModel> ()->GetPosition().y;
+
+				//使用球坐标，计算两点间距离
+				//（r,xita,fai）
+				sat_x=(90-sat_x)/180*3.1416;
+				sat_y=(sat_y+180)/180*3.1416;
+				sat_z+=6371.8;
+				gro_x=(90-gro_x)/180*3.1416;
+				gro_y=(180+gro_y)/180*3.1416;
+				double gro_z=6371.8;
+				distance=DistanceOfTwoPoints(sat_z,sat_x,sat_y,gro_z,gro_x,gro_y);
+				if(distance<min_distance)
+				{
+					min_distance=distance;
+					min_i=i;
+					min_j=j;
+				}
+			}
+		}
+		std::cout<<"Ground_station: "<<kk<<" <-> "<<"Satellite: "<<"("<<min_i<<","<<min_j<<")"<<std::endl;
+		if(min_i==ground_station_channel_tracker[kk*2]&&min_j==ground_station_channel_tracker[kk*2+1])
+			ground_station_channels[kk]->SetAttribute("Delay", TimeValue(Seconds(min_distance*1000/speed_of_light)));
+		else
+		{
+
+			ground_station_devices[0].Get(kk)->GetObject<PointToPointNetDevice>()->Detach();
+			ground_station_devices[0].Get(2+ground_station_channel_tracker[kk*2]*num_satellites_per_plane+ground_station_channel_tracker[kk*2+1])->GetObject<PointToPointNetDevice>()->Detach();
+			ground_station_channels[kk]->Detach();
+			ground_station_channels[kk]->SetAttribute("Delay", TimeValue(Seconds(min_distance*1000/speed_of_light)));
+			ground_station_devices[0].Get(kk)->GetObject<PointToPointNetDevice>()->Attach(ground_station_channels[kk]);
+			ground_station_devices[0].Get(2+min_i*num_satellites_per_plane+min_j)->GetObject<PointToPointNetDevice>()->Attach(ground_station_channels[kk]);
+			ground_station_channel_tracker[kk*2]=min_i;
+			ground_station_channel_tracker[kk*2+1]=min_j;
+		}
+	}
+
+
+
+
+//	for (uint32_t i=0; i<2; i++)
+//	{
+//		Vector gndPos = ground_stations.Get(i)->GetObject<MobilityModel> ()->GetPosition();
+//	    uint32_t closestAdjSat = 0;
+//	    uint32_t closestAdjSatDist = 0;
+//	    uint32_t planeIndex;
+//	    if (i == 0)
+//	      planeIndex = 0;
+//	    else
+//	      planeIndex = floor(3*num_planes/7);
+//	    //find closest adjacent satellite for ground station
+//	    for (uint32_t j=0; j<this->num_satellites_per_plane; j++)
+//	    {
+//	      Vector pos = this->plane[planeIndex].Get(j)->GetObject<MobilityModel>()->GetPosition();
+//	      double temp_dist = CalculateDistanceGroundToSat(gndPos,pos);
+//	      if((temp_dist < closestAdjSatDist) || (j==0))
+//	      {
+//	        closestAdjSatDist = temp_dist;
+//	        closestAdjSat = j;
+//	      }
+//	    }
+//
+//	    uint32_t currAdjNodeID = this->ground_station_channel_tracker[i];
+//	    if(currAdjNodeID == closestAdjSat)
+//	    {
+//	      double new_delay = (closestAdjSatDist*1000)/speed_of_light;
+//	      this->ground_station_channels[i]->SetAttribute("Delay", TimeValue(Seconds(new_delay)));
+//	      std::cout<<"Channel updated between ground station : "<<i<<" and plane : "<<planeIndex<<" satellite : "<<closestAdjSat<< " with distance "<<closestAdjSatDist<< "km and delay of "<<new_delay<<" seconds"<<std::endl;
+//	    }
+//	    else
+//	    {
+//	    	this->ground_station_channels[i]->Detach(this->ground_station_devices[i].Get(currAdjNodeID+1)->GetObject<CsmaNetDevice> ());
+//	        std::pair< Ptr< Ipv4 >, uint32_t> interface = this->ground_station_interfaces[i].Get(currAdjNodeID+1);
+//	        interface.first->SetDown(interface.second);
+//	        this->ground_station_channels[i]->Reattach(this->ground_station_devices[i].Get(closestAdjSat+1)->GetObject<CsmaNetDevice> ());
+//	        interface = this->ground_station_interfaces[i].Get(closestAdjSat+1);
+//	        interface.first->SetUp(interface.second);
+//	        this->ground_station_channel_tracker[i] = closestAdjSat;
+//	        double new_delay = (closestAdjSatDist*1000)/speed_of_light;
+//	        this->ground_station_channels[i]->SetAttribute("Delay", TimeValue(Seconds(new_delay)));
+//	        std::cout<<"New channel between ground station : "<<i<<" and plane : "<<planeIndex<<" satellite : "<<closestAdjSat<< " with distance "<<closestAdjSatDist<< "km and delay of "<<new_delay<<" seconds"<<std::endl;
+//	    }
+//	}
+
 	//Recompute Routing Tables
-	std::cout<<"Recomputing Routing Tables"<<std::endl;
-	Ipv4GlobalRoutingHelper::RecomputeRoutingTables ();
-	std::cout<<"Finished Recomputing Routing Tables"<<std::endl;
+//	std::cout<<"Recomputing Routing Tables"<<std::endl;
+//	Ipv4GlobalRoutingHelper::RecomputeRoutingTables ();
+//	std::cout<<"Finished Recomputing Routing Tables"<<std::endl;
 }
 
 void LeoSatelliteConfig::PrintGlobalNetInfo()
@@ -515,6 +651,18 @@ void LeoSatelliteConfig::PrintGlobalNetInfo()
 	uint32_t num_station=ground_stations.GetN();
 	std::cout<<"Now the network have "<<num_station<<" stations."<<std::endl;
 }
+
+
+double
+LeoSatelliteConfig::DistanceOfTwoPoints(double r1,double xita1,double fai1,double r2,double xita2,double fai2) const
+{
+	double distance;
+	distance=sqrt(pow(r1*sin(xita1)*cos(fai1)-r2*sin(xita2)*cos(fai2),2)+
+				  pow(r1*sin(xita1)*sin(fai1)-r2*sin(xita2)*sin(fai2),2)+
+				  pow(r1*cos(xita1)-r2*cos(xita2),2));
+	return distance;
+}
+
 
 void LeoSatelliteConfig::OutputFlowInformation(Ptr<FlowMonitor> flowmon, FlowMonitorHelper &flowmonHelper)
 {
