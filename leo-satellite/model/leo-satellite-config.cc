@@ -636,7 +636,27 @@ void LeoSatelliteConfig::PrintGlobalNetInfo()
 	std::cout<<std::endl<<std::endl;
 	uint32_t num_station=ground_stations.GetN();
 	std::cout<<"Now the network have "<<num_station<<" stations."<<std::endl;
+	uint32_t num_interface=ground_station_interfaces[0].GetN();
+	for(uint32_t i=0;i<num_interface;i++)
+	{
+		if(i==0)
+		{
+			std::cout<<"ground station"<<i<<":	"
+					 <<ground_station_interfaces[0].GetAddress(i)<<"->"
+					 <<ground_station_interfaces[0].GetAddress(ground_station_channel_tracker[0]*num_satellites_per_plane+ground_station_channel_tracker[1]+2)<<std::endl;
 
+			continue;
+		}
+		if(i==1)
+		{
+			std::cout<<"ground station"<<i<<":	"
+					 <<ground_station_interfaces[0].GetAddress(i)<<"->"
+					 <<ground_station_interfaces[0].GetAddress(ground_station_channel_tracker[2]*num_satellites_per_plane+ground_station_channel_tracker[3]+2)<<std::endl;
+			continue;
+		}
+		std::cout<<"satellite to ground station interface ("<<(i-2-(i-2)%num_satellites_per_plane)/num_satellites_per_plane<<","<<(i-2)%num_satellites_per_plane<<"):	"
+				 <<ground_station_interfaces[0].GetAddress(i)<<std::endl;
+	}
 }
 
 double
