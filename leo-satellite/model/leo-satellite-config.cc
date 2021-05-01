@@ -104,9 +104,9 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
 
 
      InternetStackHelper stack;
-     AodvHelper aodv;
+//     AodvHelper aodv;
 
-     stack.SetRoutingHelper(aodv);
+//     stack.SetRoutingHelper(aodv);
 
      stack.Install(temp_plane);
      //std::cout<<"---------------------"<< temp_plane.Get(0)->GetNDevices()<<std::endl;
@@ -260,9 +260,9 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
 
   //Install IP stack
   InternetStackHelper stack;
-  AodvHelper aodv;
+  //AodvHelper aodv;
 
-  stack.SetRoutingHelper(aodv);
+  //stack.SetRoutingHelper(aodv);
 
   stack.Install(ground_stations);
   for (int j = 0; j<2; j++)
@@ -378,14 +378,14 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
 
 
 //  std::cout<<"Populating Routing Tables"<<std::endl;
- // Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
-//  std::cout<<"Finished Populating Routing Tables"<<std::endl;
-
-
-
-
+  Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
+  Ptr<OutputStreamWrapper> routingStream = Create<OutputStreamWrapper>("routes.tr",std::ios::out);
+  Ipv4GlobalRoutingHelper::PrintRoutingTableAllAt(Seconds(3.0),routingStream);
+//  Ipv4GlobalRoutingHelper::Print(ground_stations.Get(0),routingStream,Seconds(3.0));
+//
 
   PrintGlobalNetInfo();
+  std::cout<<"Finished Populating Routing Tables"<<std::endl;
 
 }
 
@@ -564,7 +564,7 @@ void LeoSatelliteConfig::UpdateLinks()  //swd
 
 	//Recompute Routing Tables
 	std::cout<<"Recomputing Routing Tables"<<std::endl;
-	//Ipv4GlobalRoutingHelper::RecomputeRoutingTables ();
+	Ipv4GlobalRoutingHelper::RecomputeRoutingTables ();
 	std::cout<<"Finished Recomputing Routing Tables"<<std::endl;
 
 
