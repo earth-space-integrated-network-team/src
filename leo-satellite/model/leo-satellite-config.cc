@@ -358,6 +358,7 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
     address.NewNetwork();
     this->intra_plane_interfaces.push_back(address.Assign(this->intra_plane_devices[i]));
   }
+  //address.NewNetwork();
   
   //configuring IP Addresses for InterPlane devices
   for(uint32_t i=0; i< this->inter_plane_devices.size(); i++)
@@ -365,13 +366,14 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
       address.NewNetwork();
       this->inter_plane_interfaces.push_back(address.Assign(this->inter_plane_devices[i]));
     }
+  //address.NewNetwork();
 
   //configuring IP Addresses for Ground devices
-  for(uint32_t i =0;i< this->ground_station_devices.size();i++)
-  {
+//  for(uint32_t i =0;i< this->ground_station_devices.size();i++)
+//  {
 	  address.NewNetwork();
-	  this->ground_station_interfaces.push_back(address.Assign(this->ground_station_devices[i]));
-  }
+	  this->ground_station_interfaces.push_back(address.Assign(this->ground_station_devices[0]));
+//  }
 
   //Populate Routing Tables
 
@@ -668,6 +670,46 @@ LeoSatelliteConfig::DistanceOfTwoPoints(double r1,double xita1,double fai1,doubl
 				  pow(r1*cos(xita1)-r2*cos(xita2),2));
 	return distance;
 }
+
+//void
+//LeoSatelliteConfig::NodeIpv4Address()
+//{
+//	uint32_t node_num = NodeList::GetNNodes();
+//	double loc_x=0;
+//	double loc_y=0;
+//	double loc_z=0;
+//	for(uint32_t i=0;i<node_num;i++)
+//	{
+//		Ptr<Node> current_node = NodeList::GetNode(i);
+//		loc_x=current_node->GetObject<MobilityModel>()->GetPosition().x;
+//		loc_y=current_node->GetObject<MobilityModel>()->GetPosition().y;
+//		loc_z=current_node->GetObject<MobilityModel>()->GetPosition().z;
+//		uint32_t device_num=current_node->GetNDevices();
+//
+//		for(uint32_t j=0;j<device_num;j++)
+//		{
+//			Ptr<NetDevice> ndLocal = current_node->GetDevice (j);
+//
+//		}
+//
+//		if(loc_z<1)
+//		{
+//			//ground station node
+//
+//			;
+//		}
+//		else
+//		{
+//			//LEO satellite node
+//			;
+//		}
+//
+//	}
+//}
+
+
+
+
 
 
 }

@@ -25,6 +25,7 @@
 #include "ns3/aodv-module.h"
 #include "ns3/ipv4-global-routing-helper.h"
 #include "ns3/applications-module.h"
+#include "ns3/node-list.h"
 
 
 
@@ -50,7 +51,7 @@ public:
 
   void PrintGlobalNetInfo(); //print global Network Information including node list, node position, node address, link attribute
 
-
+  void NodeIpv4Address();
 
   NodeContainer ground_stations; //node container to hold ground stations
   std::vector<Ipv4InterfaceContainer> ground_station_interfaces;

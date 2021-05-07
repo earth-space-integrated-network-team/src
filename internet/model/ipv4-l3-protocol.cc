@@ -548,7 +548,7 @@ Ipv4L3Protocol::Receive ( Ptr<NetDevice> device, Ptr<const Packet> p, uint16_t p
 {
   NS_LOG_FUNCTION (this << device << p << protocol << from << to << packetType);
 
-  NS_LOG_LOGIC ("Packet from " << from << " received on node " << 
+  NS_LOG_LOGIC ("Packet from " << from << " received on node " <<
                 m_node->GetId ());
 
 
@@ -624,7 +624,7 @@ Ipv4L3Protocol::Receive ( Ptr<NetDevice> device, Ptr<const Packet> p, uint16_t p
 
   for (SocketList::iterator i = m_sockets.begin (); i != m_sockets.end (); ++i)
     {
-      NS_LOG_LOGIC ("Forwarding to raw socket"); 
+      NS_LOG_LOGIC ("Forwarding to raw socket");
       Ptr<Ipv4RawSocketImpl> socket = *i;
       socket->ForwardUp (packet, ipHeader, ipv4Interface);
     }
