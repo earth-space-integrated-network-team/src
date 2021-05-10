@@ -56,7 +56,7 @@ private:
 
 	std::pair<uint32_t,uint32_t> GetLogicalSatelliteAddress(Ptr<Node> node)const;
 	std::vector<double> SatelliteRoutingDistance(std::vector<std::vector<std::pair<uint32_t,uint32_t>>> routing,NodeContainer c)const;
-	double DistanceBetweenSatellites(std::pair<uint32_t,uint32_t> s1,std::pair<uint32_t,uint32_t> s2,double h,uint32_t num)const;
+	double DistanceBetweenSatellites(std::pair<uint32_t,uint32_t> s1,std::pair<uint32_t,uint32_t> s2,double h,uint32_t num,uint32_t plane)const;
 
 
 public:

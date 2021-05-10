@@ -333,12 +333,17 @@ SatelliteGlobalRouting::SatelliteRoutingDistance(std::vector<std::vector<std::pa
 }
 
 double
-SatelliteGlobalRouting::DistanceBetweenSatellites(std::pair<uint32_t,uint32_t> s1,std::pair<uint32_t,uint32_t> s2,double h,uint32_t num)const
+SatelliteGlobalRouting::DistanceBetweenSatellites(std::pair<uint32_t,uint32_t> s1,std::pair<uint32_t,uint32_t> s2,double h,uint32_t num,uint32_t plane)const
 {
 	double current_time=Simulator::Now().GetSeconds();
 	double R = 6378.1;
-	if(s1.first==s2.first)//同轨相邻卫星
-		return sin(180/num)*(R+h)*2;
+	double x_0 = 50;
+	double x_1 = 60;
+	double G = 6.673e-11; // gravitational constant [Nm^2/kg^2]
+	double M = 5.972e24; // mass of Earth [kg]
+	double distance;
+	if (s1.first == s2.first)//同轨相邻卫星
+		return sin(180 / num) * (R + h) * 2;
 	else//异轨相邻卫星
 	{
 		double s1_x;
@@ -346,6 +351,45 @@ SatelliteGlobalRouting::DistanceBetweenSatellites(std::pair<uint32_t,uint32_t> s
 		double s2_x;
 		double s2_y;
 
+		while (current_time > 2 * 3.1416 * sqrt(pow(R + h, 3) / G / M))
+			current_time -= 2 * 3.1416 * sqrt(pow(R + h, 3) / G / M);
+
+		double derta_x = 180 * current_time * sqrt(G * M / pow(R + h, 3)) / 3.1416;
+		double derta_y = 360 / plane;
+
+
+		if (s1.first % 2 < 0.5)
+			s1_x = x_0 - s1.second * 360 / num + derta_x;
+		else
+			s1_x = x_1 - s1.second * 360 / num + derta_x;
+		if (s2.first % 2 < 0.5)
+			s2_x = x_0 - s2.second * 360 / num + derta_x;
+		else
+			s2_x = x_1 - s2.second * 360 / num + derta_x;
+
+		if (abs(s1_x) <= 90);
+		if (abs(s2_x) <= 90);
+
+		if (s1_x > 90 && s1_x <= 270)s1_x = 180 - s1_x;
+		if (s2_x > 90 && s2_x <= 270)s2_x = 180 - s2_x;
+
+		if (s1_x > -270 && s1_x < -90)s1_x = -(180 + s1_x);
+		if (s2_x > -270 && s2_x < -90)s2_x = -(180 + s2_x);
+
+		if (s1_x > 270)s1_x = -(360 - s1_x);
+		if (s2_x > 270)s2_x = -(360 - s2_x);
+
+		if (s1_x < -270)s1_x = s1_x + 360;
+		if (s2_x < -270)s2_x = s2_x + 360;
+
+		s1_x = (90 - s1_x) / 180 * 3.1416;
+		s2_x = (90 - s1_x) / 180 * 3.1416;
+
+		distance= sqrt(pow((R+h) * sin(s1_x) * cos(0) - (R+h) * sin(s2_x) * cos(derta_y), 2) +
+				pow((R+h) * sin(s1_x) * sin(0) - (R+h) * sin(s2_x) * sin(derta_y), 2) +
+				pow((R+h) * cos(s1_x) - (R+h) * cos(s2_x), 2));
+
+		return distance;
 	}
 }
 
