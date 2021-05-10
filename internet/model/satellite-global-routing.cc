@@ -383,7 +383,7 @@ SatelliteGlobalRouting::DistanceBetweenSatellites(std::pair<uint32_t,uint32_t> s
 		if (s2_x < -270)s2_x = s2_x + 360;
 
 		s1_x = (90 - s1_x) / 180 * 3.1416;
-		s2_x = (90 - s1_x) / 180 * 3.1416;
+		s2_x = (90 - s2_x) / 180 * 3.1416;
 
 		distance= sqrt(pow((R+h) * sin(s1_x) * cos(0) - (R+h) * sin(s2_x) * cos(derta_y), 2) +
 				pow((R+h) * sin(s1_x) * sin(0) - (R+h) * sin(s2_x) * sin(derta_y), 2) +
