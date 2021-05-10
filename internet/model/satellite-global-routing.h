@@ -14,6 +14,8 @@
 #include "ns3/leo-satellite-mobility.h"
 #include "ns3/point-to-point-module.h"
 #include <typeinfo>
+#include "ns3/core-module.h"
+#include <cmath>
 
 namespace ns3{
 
@@ -53,12 +55,15 @@ private:
 	typedef std::list<Ipv4RoutingTableEntry *>::const_iterator SatelliteRoutesCI;
 
 	std::pair<uint32_t,uint32_t> GetLogicalSatelliteAddress(Ptr<Node> node)const;
+	std::vector<double> SatelliteRoutingDistance(std::vector<std::vector<std::pair<uint32_t,uint32_t>>> routing,NodeContainer c)const;
+	double DistanceBetweenSatellites(std::pair<uint32_t,uint32_t> s1,std::pair<uint32_t,uint32_t> s2,double h,uint32_t num)const;
 
 
 public:
 	uint32_t GetNRoutes (void) const;
 	Ipv4RoutingTableEntry *GetRoute (uint32_t i) const;
-	void GenerateRoutingTable(NodeContainer c);
+	void GenerateSatelliteRoutingTable(NodeContainer c,std::vector<std::pair<uint32_t,uint32_t>> logical_address_table);
+	void GenerateSatToGroRoutingTable(NodeContainer c);
 };
 
 
