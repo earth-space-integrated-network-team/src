@@ -351,21 +351,21 @@ SatelliteGlobalRouting::DistanceBetweenSatellites(std::pair<uint32_t,uint32_t> s
 		double s2_x;
 		double s2_y;
 
-		while (current_time > 2 * 3.1416 * sqrt(pow(R + h, 3) / G / M))
-			current_time -= 2 * 3.1416 * sqrt(pow(R + h, 3) / G / M);
+		while (current_time > 2 * 3.1416 * sqrt(pow((R + h)*1000, 3) / G / M))
+			current_time -= 2 * 3.1416 * sqrt(pow((R + h)*1000, 3) / G / M);
 
-		double derta_x = 180 * current_time * sqrt(G * M / pow(R + h, 3)) / 3.1416;
+		double derta_x = 180 * current_time * sqrt(G * M / pow((R + h)*1000, 3)) / 3.1416;
 		double derta_y = 360 / plane;
 
 
 		if (s1.first % 2 < 0.5)
-			s1_x = x_0 - s1.second * 360 / num + derta_x;
+			s1_x = x_0 - s1.second * 360 / num - derta_x;
 		else
-			s1_x = x_1 - s1.second * 360 / num + derta_x;
+			s1_x = x_1 - s1.second * 360 / num - derta_x;
 		if (s2.first % 2 < 0.5)
-			s2_x = x_0 - s2.second * 360 / num + derta_x;
+			s2_x = x_0 - s2.second * 360 / num - derta_x;
 		else
-			s2_x = x_1 - s2.second * 360 / num + derta_x;
+			s2_x = x_1 - s2.second * 360 / num - derta_x;
 
 		if (abs(s1_x) <= 90);
 		if (abs(s2_x) <= 90);
