@@ -27,6 +27,7 @@ for dirname in os.listdir('src'):
         continue
     if os.path.exists(os.path.join(path, 'wscript')):
         all_modules.append(dirname)
+print(all_modules)
 all_modules.sort()
 
 def get_required_boost_libs(conf):

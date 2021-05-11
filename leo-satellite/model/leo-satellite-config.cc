@@ -12,7 +12,7 @@
 #include <typeinfo>
 #include "ns3/net-device-container.h"
 #include <cmath>
-#include "ns3/free-point-to-point-helper.h"
+
 
 
 
@@ -104,11 +104,20 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
 
 
      InternetStackHelper stack;
+     //SatelliteGlobalRoutingHelper sgrh;
 //     AodvHelper aodv;
 
-//     stack.SetRoutingHelper(aodv);
+     //stack.SetRoutingHelper(sgrh);
 
      stack.Install(temp_plane);
+
+     for(uint32_t kk=0;kk<temp_plane.GetN();kk++)
+     {
+    	 Ptr<Node> current=temp_plane.Get(kk);
+    	 Ptr<Ipv4> ipv4=current->GetObject<Ipv4>();
+    	 Ptr<Ipv4RoutingProtocol> ipv4Routing =
+     }
+
      //std::cout<<"---------------------"<< temp_plane.Get(0)->GetNDevices()<<std::endl;
      this->plane.push_back(temp_plane);
 

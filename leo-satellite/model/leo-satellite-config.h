@@ -14,18 +14,22 @@
 #include "ns3/object.h"
 #include "ns3/ptr.h"
 #include "ns3/core-module.h"
+#include "ns3/internet-module.h"
+//#include "ns3/satellite-global-routing-helper.h"
 #include "ns3/point-to-point-module.h"
 #include "ns3/leo-satellite-mobility.h"
 #include "ns3/ground-station-mobility.h"
 #include <vector>
 #include "ns3/mobility-module.h"
-#include "ns3/csma-module.h"
+//#include "ns3/csma-module.h"
 #include <cmath>
-#include "ns3/internet-module.h"
-#include "ns3/aodv-module.h"
-#include "ns3/ipv4-global-routing-helper.h"
+
+//#include "ns3/aodv-module.h"
+//#include "ns3/ipv4-global-routing-helper.h"
 #include "ns3/applications-module.h"
 #include "ns3/node-list.h"
+//#include "ns3/free-point-to-point-helper.h"
+
 
 
 
