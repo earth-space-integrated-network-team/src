@@ -21,6 +21,9 @@ namespace ns3 {
 NS_OBJECT_ENSURE_REGISTERED (LeoSatelliteConfig);
 NS_LOG_COMPONENT_DEFINE ("LeoSatelliteConfig");
 
+typedef std::vector<Ipv4RoutingTableEntry *> SatelliteRoutes;
+SatelliteRoutes GenerateSatelliteRoutingTable(SatelliteRoutes m_SatelliteRoutes,Ptr<Node> node,NodeContainer c, std::vector<std::pair<uint32_t, uint32_t>> logical_address_table);
+//SatelliteRoutes GenerateSatelliteRoutingTable(SatelliteRoutes m_SatelliteRoutes,Ptr<Ipv4>m_ipv4,NodeContainer c, std::vector<std::pair<uint32_t, uint32_t>> logical_address_table);
 
 
 //extern double CalculateDistanceGroundToSat (const Vector &a, const Vector &b);
@@ -375,12 +378,142 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
 	  this->ground_station_interfaces.push_back(address.Assign(this->ground_station_devices[0]));
 //  }
 
+
+
+
+	  std::vector<std::pair<uint32_t, uint32_t>> logical_address_table;
+
+
+
   //Populate Routing Tables
+	 // Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
+	  NodeContainer c;
+	for(uint32_t i=0;i<num_planes;i++)
+	{
+		for(uint32_t j=0;j<num_satellites_per_plane;j++)
+		{
+
+			logical_address_table.push_back(std::make_pair(i,j));
+			Ptr<Node> node=plane[i].Get(j);
+			c.Add(node);
+			Ptr<Ipv4>ipv4_temp=node->GetObject<Ipv4>();
+			int16_t priority;
+			Ptr<Ipv4GlobalRouting>routing=ipv4_temp->
+					  	  	  	  	  	  GetRoutingProtocol()->
+					                      GetObject<Ipv4ListRouting>()->
+										  GetRoutingProtocol(0,priority)->
+										  GetObject<Ipv4GlobalRouting>();
+			priority=10;
+			for(uint32_t k=0;k<routing->GetNRoutes();k++)
+			{
+				routing->RemoveRoute(k);
+			}
+		}
+	}
+
+
+
+	for(uint32_t i=0;i<num_planes;i++)
+	{
+		for(uint32_t j=0;j<num_satellites_per_plane;j++)
+		{
+			Ptr<Node> node =plane[i].Get(j);
+			SatelliteRoutes m_SatelliteRoutes;
+			m_SatelliteRoutes=GenerateSatelliteRoutingTable(m_SatelliteRoutes,node,c,logical_address_table);
+			Ptr<Ipv4>ipv4_temp=node->GetObject<Ipv4>();
+			int16_t priority;
+			Ptr<Ipv4GlobalRouting>routing=ipv4_temp->
+					  	  	  	  	  	  GetRoutingProtocol()->
+					                      GetObject<Ipv4ListRouting>()->
+										  GetRoutingProtocol(0,priority)->
+										  GetObject<Ipv4GlobalRouting>();
+			priority=10;
+
+			for(uint32_t k=0;k<m_SatelliteRoutes.size();k++)
+			{
+				routing->AddHostRouteTo(m_SatelliteRoutes[k]->GetDest(), m_SatelliteRoutes[k]->GetGateway(), m_SatelliteRoutes[k]->GetInterface());
+			}
+		}
+	}
+
+	for(uint32_t i=0;i<ground_stations.GetN();i++)
+	{
+		c.Add(ground_stations.Get(i));
+	}
+	for(uint32_t i=0;i<c.GetN();i++)
+	{
+		Ptr<Node> current_node=c.Get(i);
+		if (current_node->GetObject<MobilityModel>()->GetPosition().z < 0.1)	//this node is ground station
+		{
+			Ptr<PointToPointNetDevice> d_l = current_node->GetDevice(1)->GetObject<PointToPointNetDevice>();
+			Ptr<PointToPointChannel> c_l = d_l->GetChannel()->GetObject<PointToPointChannel>();
+			Ptr<PointToPointNetDevice> d_a = (c_l->GetPointToPointDevice(0) == d_l) ? c_l->GetPointToPointDevice(1) : c_l->GetPointToPointDevice(0);
+			Ptr<Ipv4L3Protocol> ipv4_a = d_a->GetNode()->GetObject<Ipv4L3Protocol>();
+			Ipv4InterfaceAddress interface_a = ipv4_a->GetAddress((ipv4_a->GetInterfaceForDevice(d_a)), 0);
+			Ipv4Address ipv4address_a = interface_a.GetLocal();
+			Ptr<Ipv4> m_ipv4=current_node->GetObject<Ipv4>();
+			int16_t priority;
+			Ptr<Ipv4GlobalRouting>routing=m_ipv4->
+				  	  	  	  	  	  GetRoutingProtocol()->
+				                      GetObject<Ipv4ListRouting>()->
+									  GetRoutingProtocol(0,priority)->
+									  GetObject<Ipv4GlobalRouting>();
+			priority=10;
+//			routing->AddHostRouteTo(Ipv4Address("0.0.0.0"),ipv4address_a,m_ipv4->GetInterfaceForDevice(d_l));
+			routing->AddNetworkRouteTo(Ipv4Address("0.0.0.0"), Ipv4Mask("0.0.0.0"), ipv4address_a, m_ipv4->GetInterfaceForDevice(d_l));
+		}
+		else
+		{
+			Ptr<Ipv4> m_ipv4=current_node->GetObject<Ipv4>();
+			int16_t priority;
+			Ptr<Ipv4GlobalRouting>routing=m_ipv4->
+				  	  	  	  	  	  GetRoutingProtocol()->
+				                      GetObject<Ipv4ListRouting>()->
+									  GetRoutingProtocol(0,priority)->
+									  GetObject<Ipv4GlobalRouting>();
+			for(uint32_t k=0;k<ground_stations.GetN();k++)
+			{
+				Ptr<Node> gs=ground_stations.Get(k);
+				Ptr<Ipv4L3Protocol> gs_ipv4=gs->GetObject<Ipv4L3Protocol>();
+				Ptr<PointToPointNetDevice> d_l = gs->GetDevice(1)->GetObject<PointToPointNetDevice>();
+				Ptr<PointToPointChannel> c_l = d_l->GetChannel()->GetObject<PointToPointChannel>();
+				Ptr<PointToPointNetDevice> d_a = (c_l->GetPointToPointDevice(0) == d_l) ? c_l->GetPointToPointDevice(1) : c_l->GetPointToPointDevice(0);
+				Ptr<Ipv4L3Protocol> ipv4_a = d_a->GetNode()->GetObject<Ipv4L3Protocol>();
+				Ipv4InterfaceAddress interface_a = ipv4_a->GetAddress((ipv4_a->GetInterfaceForDevice(d_a)), 0);
+				Ipv4Address ipv4address_a = interface_a.GetLocal();
+				Ipv4Address gs_ipadd=gs->GetObject<Ipv4>()->GetAddress((gs_ipv4->GetInterfaceForDevice(d_l)), 0).GetLocal();
+				if(d_a->GetNode()==current_node)
+				{
+					routing->AddHostRouteTo(gs_ipadd,gs_ipadd,m_ipv4->GetInterfaceForDevice(d_a));
+					continue;
+				}
+
+//				for(uint32_t ind=0;ind<routing->GetNRoutes();ind++)
+//				{
+//					if(routing->GetRoute(ind)->GetDest()==gs_ipadd)
+//						routing->RemoveRoute(ind);
+//				}
+				for(uint32_t ind=0;ind<routing->GetNRoutes();ind++)
+				{
+//						Ptr<Ipv4RoutingTableEntry> irte=routing->GetRoute(ind);
+					if(routing->GetRoute(ind)->GetDest()==ipv4address_a)
+					{
+						routing->AddHostRouteTo(gs_ipadd, routing->GetRoute(ind)->GetGateway(), routing->GetRoute(ind)->GetInterface());
+					}
+				}
+			}
+//				routing->AddHostRouteTo(dest, nextHop, interface)
+		}
+//		current_node->GetObject<Ipv4L3Protocol>()->
+//  	  	  	  	      GetRoutingProtocol()->
+//                      GetObject<Ipv4ListRouting>()->ChangePriority(priority);
+	}
+
 
 
 
 //  std::cout<<"Populating Routing Tables"<<std::endl;
-  Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
+//  Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
   Ptr<OutputStreamWrapper> routingStream = Create<OutputStreamWrapper>("routes.tr",std::ios::out);
   Ipv4GlobalRoutingHelper::PrintRoutingTableAllAt(Seconds(3.0),routingStream);
 //  Ipv4GlobalRoutingHelper::Print(ground_stations.Get(0),routingStream,Seconds(3.0));
@@ -388,6 +521,12 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
 
   PrintGlobalNetInfo();
   std::cout<<"Finished Populating Routing Tables"<<std::endl;
+
+
+
+
+
+
 
 }
 
@@ -514,56 +653,6 @@ void LeoSatelliteConfig::UpdateLinks()  //swd
 		  }
 	  }
 
-
-
-	/*
-	for (uint32_t i=0; i<2; i++)
-	{
-		Vector gndPos = ground_stations.Get(i)->GetObject<MobilityModel> ()->GetPosition();
-	    uint32_t closestAdjSat = 0;
-	    uint32_t closestAdjSatDist = 0;
-	    //planeIndex同上，需要改
-	    uint32_t planeIndex;
-	    if (i == 0)
-	      planeIndex = 0;
-	    else
-	      planeIndex = floor(3*num_planes/7);
-	    //find closest adjacent satellite for ground station
-	    for (uint32_t j=0; j<this->num_satellites_per_plane; j++)
-	    {
-	      Vector pos = this->plane[planeIndex].Get(j)->GetObject<MobilityModel>()->GetPosition();
-	      double temp_dist = CalculateDistanceGroundToSat(gndPos,pos);
-	      if((temp_dist < closestAdjSatDist) || (j==0))
-	      {
-	        closestAdjSatDist = temp_dist;
-	        closestAdjSat = j;
-	      }
-	    }
-
-	    uint32_t currAdjNodeID = this->ground_station_channel_tracker[i];
-	    if(currAdjNodeID == closestAdjSat)
-	    {
-	      double new_delay = (closestAdjSatDist*1000)/speed_of_light;
-	      this->ground_station_channels[i]->SetAttribute("Delay", TimeValue(Seconds(new_delay)));
-	      std::cout<<"Channel updated between ground station : "<<i<<" and plane : "<<planeIndex<<" satellite : "<<closestAdjSat<< " with distance "<<closestAdjSatDist<< "km and delay of "<<new_delay<<" seconds"<<std::endl;
-	    }
-	    else
-	    {
-	    	this->ground_station_channels[i]->Detach(this->ground_station_devices[i].Get(currAdjNodeID+1)->GetObject<CsmaNetDevice> ());
-	        std::pair< Ptr< Ipv4 >, uint32_t> interface = this->ground_station_interfaces[i].Get(currAdjNodeID+1);
-	        interface.first->SetDown(interface.second);
-	        this->ground_station_channels[i]->Reattach(this->ground_station_devices[i].Get(closestAdjSat+1)->GetObject<CsmaNetDevice> ());
-	        interface = this->ground_station_interfaces[i].Get(closestAdjSat+1);
-	        interface.first->SetUp(interface.second);
-	        this->ground_station_channel_tracker[i] = closestAdjSat;
-	        double new_delay = (closestAdjSatDist*1000)/speed_of_light;
-	        this->ground_station_channels[i]->SetAttribute("Delay", TimeValue(Seconds(new_delay)));
-	        std::cout<<"New channel between ground station : "<<i<<" and plane : "<<planeIndex<<" satellite : "<<closestAdjSat<< " with distance "<<closestAdjSatDist<< "km and delay of "<<new_delay<<" seconds"<<std::endl;
-	    }
-	}
-
-	*/
-
 	//Recompute Routing Tables
 	std::cout<<"Recomputing Routing Tables"<<std::endl;
 	Ipv4GlobalRoutingHelper::RecomputeRoutingTables ();
@@ -671,41 +760,347 @@ LeoSatelliteConfig::DistanceOfTwoPoints(double r1,double xita1,double fai1,doubl
 	return distance;
 }
 
-//void
-//LeoSatelliteConfig::NodeIpv4Address()
-//{
-//	uint32_t node_num = NodeList::GetNNodes();
-//	double loc_x=0;
-//	double loc_y=0;
-//	double loc_z=0;
-//	for(uint32_t i=0;i<node_num;i++)
-//	{
-//		Ptr<Node> current_node = NodeList::GetNode(i);
-//		loc_x=current_node->GetObject<MobilityModel>()->GetPosition().x;
-//		loc_y=current_node->GetObject<MobilityModel>()->GetPosition().y;
-//		loc_z=current_node->GetObject<MobilityModel>()->GetPosition().z;
-//		uint32_t device_num=current_node->GetNDevices();
+
+double DistanceBetweenSatellites(std::pair<uint32_t, uint32_t> s1, std::pair<uint32_t, uint32_t> s2, double h, uint32_t num, uint32_t plane)
+{
+	double current_time = Simulator::Now().GetSeconds();
+	double R = 6378.1;
+	double x_0 = 50;
+	double x_1 = 60;
+	double G = 6.673e-11; // gravitational constant [Nm^2/kg^2]
+	double M = 5.972e24; // mass of Earth [kg]
+	double distance;
+	if (s1.first == s2.first)//同轨相邻卫星
+		return sin(3.1416 / num) * (R + h) * 2;
+	else//异轨相邻卫星
+	{
+		double s1_x;
+		//		double s1_y;
+		double s2_x;
+		//		double s2_y;
+
+		while (current_time > 2 * 3.1416 * sqrt(pow((R + h) * 1000, 3) / G / M))
+			current_time -= 2 * 3.1416 * sqrt(pow((R + h) * 1000, 3) / G / M);
+
+		double derta_x = 180 * current_time * sqrt(G * M / pow((R + h) * 1000, 3)) / 3.1416;
+		double derta_y = 3.1416 / plane;
+
+
+		if (s1.first % 2 < 0.5)
+			s1_x = x_0 - s1.second * 360 / num - derta_x;
+		else
+			s1_x = x_1 - s1.second * 360 / num - derta_x;
+		if (s2.first % 2 < 0.5)
+			s2_x = x_0 - s2.second * 360 / num - derta_x;
+		else
+			s2_x = x_1 - s2.second * 360 / num - derta_x;
+
+		if (s1_x > 90 && s1_x <= 270)s1_x = 180 - s1_x;
+		if (s2_x > 90 && s2_x <= 270)s2_x = 180 - s2_x;
+
+		if (s1_x > -270 && s1_x < -90)s1_x = -(180 + s1_x);
+		if (s2_x > -270 && s2_x < -90)s2_x = -(180 + s2_x);
+
+		if (s1_x > 270)s1_x = -(360 - s1_x);
+		if (s2_x > 270)s2_x = -(360 - s2_x);
+
+		if (s1_x < -270)s1_x = s1_x + 360;
+		if (s2_x < -270)s2_x = s2_x + 360;
+
+		if(abs(s1_x)>70||abs(s2_x)>70)return -99999999;
+
+		s1_x = (90 - s1_x) / 180 * 3.1416;
+		s2_x = (90 - s2_x) / 180 * 3.1416;
+
+		distance = sqrt(pow((R + h) * sin(s1_x) * cos(0) - (R + h) * sin(s2_x) * cos(derta_y), 2) +
+			pow((R + h) * sin(s1_x) * sin(0) - (R + h) * sin(s2_x) * sin(derta_y), 2) +
+			pow((R + h) * cos(s1_x) - (R + h) * cos(s2_x), 2));
+
+		return distance;
+	}
+}
+
+std::vector<double> SatelliteRoutingDistance(std::vector<std::vector<std::pair<uint32_t, uint32_t>>> routing, double h, uint32_t num, uint32_t plane)
+{
+	std::vector<double> distance_table;
+	for (std::vector<std::vector<std::pair<uint32_t, uint32_t>>>::iterator it = routing.begin(); it != routing.end(); it++)
+	{
+		double distance = 0;
+		for (std::vector<std::pair<uint32_t, uint32_t>>::iterator node = it->begin(); node != it->end() - 1; node++)
+		{
+			distance = distance + DistanceBetweenSatellites(*node, *(node + 1), h, num, plane);
+		}
+		distance_table.push_back(distance);
+	}
+	return distance_table;
+}
+
+
+
+
+
+SatelliteRoutes GenerateSatelliteRoutingTable(SatelliteRoutes m_SatelliteRoutes,Ptr<Node>current_node,NodeContainer c, std::vector<std::pair<uint32_t, uint32_t>> logical_address_table)
+{
+			Ptr<Ipv4>m_ipv4=current_node->GetObject<Ipv4>();
+			double h = current_node->GetObject<MobilityModel>()->GetPosition().z;
+			uint32_t num = (logical_address_table.end() - 1)->second;
+			uint32_t plane = (logical_address_table.end() - 1)->first;
+			std::pair<uint32_t, uint32_t> source_logical_address;
+			std::pair<uint32_t, uint32_t> destination_logical_address;
+			//	std::pair<uint32_t,uint32_t> logical_satellite_address;
+			//	logical_satellite_address = GetLogicalSatelliteAddress(current_node);
+			uint32_t i;
+			enum HopDirection { POSITIVE, NEGATIVE, ZERO };
+			std::pair<HopDirection, HopDirection> direction;
+			//	uint32_t num_satellite_per_plane = (logical_address_table.end()-1)->second()+1;
+			std::vector<std::pair<uint32_t, uint32_t>>::iterator temp = logical_address_table.end() - 1;
+			uint32_t num_satellite_per_plane = temp->second + 1;
+
+			for (i = 0; i < c.GetN(); i++)
+			{
+				if (c.Get(i) == current_node)
+				{
+					source_logical_address = logical_address_table[i];
+					break;
+				}
+				else continue;
+			}
+			if (i == c.GetN())return m_SatelliteRoutes;
+
+			for (i = 0; i < c.GetN(); i++)
+			{
+				if (c.Get(i) == current_node) continue;
+				destination_logical_address = logical_address_table[i];
+				if (destination_logical_address.first > source_logical_address.first)
+					direction.first = POSITIVE;
+				else if (destination_logical_address.first < source_logical_address.first)
+					direction.first = NEGATIVE;
+				else direction.first = ZERO;
+
+				if (destination_logical_address.second > source_logical_address.second)
+					direction.second = POSITIVE;
+				else if (destination_logical_address.second < source_logical_address.second)
+					direction.second = NEGATIVE;
+				else direction.second = ZERO;
+
+				std::vector<std::vector<std::vector<std::pair<uint32_t, uint32_t>>>> path_table1;
+				std::vector<std::vector<std::vector<std::pair<uint32_t, uint32_t>>>> path_table2;
+				std::vector<std::vector<std::pair<uint32_t, uint32_t>>> routing;
+
+				//path_table[i]表示从source到第i个节点的路径表
+				//path_table[i][j]表示从source到第i个节点的第j条路径
+				//path_table[i][j]储存从source到第i个节点的第j条路径上的节点逻辑地址
+				//routing维护从source到destination的若干条路径
+
+				uint32_t h_hop = std::max(destination_logical_address.first, source_logical_address.first) -
+					std::min(destination_logical_address.first, source_logical_address.first);
+				uint32_t v_hop1 = std::max(destination_logical_address.second, source_logical_address.second) -
+					std::min(destination_logical_address.second, source_logical_address.second);
+				uint32_t v_hop2 = (num_satellite_per_plane -
+					std::max(destination_logical_address.second, source_logical_address.second) -
+					std::min(destination_logical_address.second, source_logical_address.second)) %
+					num_satellite_per_plane;
+
+				for (uint32_t hh = 0; hh < h_hop + 1; hh++)
+				{
+					for (uint32_t vv = 0; vv < v_hop1 + 1; vv++)
+					{
+						std::vector<std::pair<uint32_t, uint32_t>> a;
+						std::vector<std::vector<std::pair<uint32_t, uint32_t>>> b;
+						uint32_t h_logical, v_logical;
+						if (hh == 0 && vv == 0)//无下、无左
+						{
+
+							a.push_back(source_logical_address);
+							b.push_back(a);
+							path_table1.push_back(b);
+							continue;
+						}
+						if (vv == 0)//无下，有左
+						{
+							if (direction.first == POSITIVE) h_logical = source_logical_address.first + hh;
+							else h_logical = source_logical_address.first - hh;
+							a = path_table1[(hh - 1) * (v_hop1 + 1)][0];
+							a.push_back(std::make_pair(h_logical, source_logical_address.second));
+							b.push_back(a);
+							path_table1.push_back(b);
+							continue;
+						}
+						if (hh == 0)//有下、无左
+						{
+							if (direction.second == POSITIVE) v_logical = source_logical_address.second + vv;
+							else v_logical = source_logical_address.second - vv;
+							a = (*(path_table1.end() - 1))[0];
+							a.push_back(std::make_pair(source_logical_address.first, v_logical));
+							b.push_back(a);
+							path_table1.push_back(b);
+							continue;
+						}
+						//有下、有左
+						if (direction.first == POSITIVE) h_logical = source_logical_address.first + hh;
+						else h_logical = source_logical_address.first - hh;
+						if (direction.second == POSITIVE) v_logical = source_logical_address.second + vv;
+						else v_logical = source_logical_address.second - vv;
+						for (std::vector<std::vector<std::pair<uint32_t, uint32_t>>>::iterator it = path_table1[(hh - 1) * (v_hop1 + 1) + vv].begin();
+							it != path_table1[(hh - 1) * (v_hop1 + 1) + vv].end(); it++)
+						{
+							a = *it;
+							a.push_back(std::make_pair(h_logical, v_logical));
+							b.push_back(a);
+						}
+
+						for (std::vector<std::vector<std::pair<uint32_t, uint32_t>>>::iterator it = (path_table1.end() - 1)->begin();
+							it != (path_table1.end() - 1)->end(); it++)
+						{
+							a = *it;
+							a.push_back(std::make_pair(h_logical, v_logical));
+							b.push_back(a);
+						}
+						path_table1.push_back(b);
+					}
+				}
+
+
+				//环形拓扑
+
+				for (uint32_t hh = 0; hh < h_hop + 1; hh++)
+				{
+					for (uint32_t vv = 0; vv < v_hop2 + 1; vv++)
+					{
+						std::vector<std::pair<uint32_t, uint32_t>> a;
+						std::vector<std::vector<std::pair<uint32_t, uint32_t>>> b;
+						uint32_t h_logical, v_logical;
+						if (hh == 0 && vv == 0)//无下、无左
+						{
+
+							a.push_back(source_logical_address);
+							b.push_back(a);
+							path_table2.push_back(b);
+							continue;
+						}
+						if (vv == 0)//无下，有左
+						{
+							if (direction.first == POSITIVE) h_logical = source_logical_address.first + hh;
+							else h_logical = source_logical_address.first - hh;
+							a = path_table2[(hh - 1) * (v_hop2 + 1)][0];
+							a.push_back(std::make_pair(h_logical, source_logical_address.second));
+							b.push_back(a);
+							path_table2.push_back(b);
+							continue;
+						}
+						if (hh == 0)//有下、无左
+						{
+							if (direction.second == NEGATIVE) v_logical = (source_logical_address.second + vv) % num_satellite_per_plane;
+							else v_logical = (source_logical_address.second + num_satellite_per_plane - vv) % num_satellite_per_plane;
+							a = (*(path_table2.end() - 1))[0];
+							a.push_back(std::make_pair(source_logical_address.first, v_logical));
+							b.push_back(a);
+							path_table2.push_back(b);
+							continue;
+						}
+						//有下、有左
+						if (direction.first == POSITIVE) h_logical = source_logical_address.first + hh;
+						else h_logical = source_logical_address.first - hh;
+						if (direction.second == NEGATIVE) v_logical = (source_logical_address.second + vv) % num_satellite_per_plane;
+						else v_logical = (source_logical_address.second + num_satellite_per_plane - vv) % num_satellite_per_plane;;
+						for (std::vector<std::vector<std::pair<uint32_t, uint32_t>>>::iterator it = path_table2[(hh - 1) * (v_hop2 + 1) + vv].begin();
+							it != path_table2[(hh - 1) * (v_hop2 + 1) + vv].end(); it++)
+						{
+							a = *it;
+							a.push_back(std::make_pair(h_logical, v_logical));
+							b.push_back(a);
+						}
+
+						for (std::vector<std::vector<std::pair<uint32_t, uint32_t>>>::iterator it = (path_table2.end() - 1)->begin();
+							it != (path_table2.end() - 1)->end(); it++)
+						{
+							a = *it;
+							a.push_back(std::make_pair(h_logical, v_logical));
+							b.push_back(a);
+						}
+						path_table2.push_back(b);
+					}
+				}
+
+				for (std::vector<std::vector<std::pair<uint32_t, uint32_t>>>::iterator it = (path_table1.end() - 1)->begin();
+					it != (path_table1.end() - 1)->end(); it++)
+				{
+					routing.push_back(*it);
+				}
+				for (std::vector<std::vector<std::pair<uint32_t, uint32_t>>>::iterator it = (path_table2.end() - 1)->begin();
+					it != (path_table2.end() - 1)->end(); it++)
+				{
+					routing.push_back(*it);
+				}
+
+				std::vector<double> distance_table = SatelliteRoutingDistance(routing, h, num, plane);
+
+//				for(std::vector<std::vector<std::pair<uint32_t, uint32_t>>>::iterator it=routing.begin();it!=routing.end();it++)
+//				{
+//					for(std::vector<std::pair<uint32_t, uint32_t>>::iterator that=it->begin();that!=it->end();that++)
+//					{
+//						if(that->)
+//					}
 //
-//		for(uint32_t j=0;j<device_num;j++)
-//		{
-//			Ptr<NetDevice> ndLocal = current_node->GetDevice (j);
-//
-//		}
-//
-//		if(loc_z<1)
-//		{
-//			//ground station node
-//
-//			;
-//		}
-//		else
-//		{
-//			//LEO satellite node
-//			;
-//		}
-//
-//	}
-//}
+//				}
+
+
+				//最短路径排序
+				for (uint32_t jj = 0; jj < distance_table.size() - 1; jj++)
+				{
+					for (uint32_t kk = 0; kk < distance_table.size() - 1 - jj; kk++)
+					{
+						if (distance_table[kk] > distance_table[kk + 1])
+						{
+							std::swap(distance_table[kk], distance_table[kk + 1]);
+							std::swap(routing[kk], routing[kk + 1]);
+						}
+					}
+				}
+
+				if (distance_table[0] > 0.5)
+				{
+					std::pair<uint32_t, uint32_t> gateway_logical = routing[0][1];
+					uint32_t aa = 0;
+					for (std::vector<std::pair<uint32_t, uint32_t>>::iterator it = logical_address_table.begin(); it != logical_address_table.end(); it++)
+					{
+						if (gateway_logical.first == it->first && gateway_logical.second == it->second)
+							break;
+						aa += 1;
+					}
+					if (aa == c.GetN())return m_SatelliteRoutes;;
+					Ptr<Node> node_a = c.Get(aa);
+					for (aa = 0; aa < current_node->GetNDevices(); aa++)
+					{
+						if(!current_node->GetDevice(aa)->IsPointToPoint()) continue;
+						Ptr<PointToPointNetDevice> d_l = current_node->GetDevice(aa)->GetObject<PointToPointNetDevice>();
+						if(d_l->GetChannel()==0)continue;
+						Ptr<PointToPointChannel> c_l = d_l->GetChannel()->GetObject<PointToPointChannel>();
+
+						Ptr<PointToPointNetDevice> d_a = (c_l->GetPointToPointDevice(0) == d_l) ? c_l->GetPointToPointDevice(1) : c_l->GetPointToPointDevice(0);
+						if (d_a->GetNode() == node_a)
+						{
+
+							Ptr<Ipv4L3Protocol> ipv4_a = node_a->GetObject<Ipv4L3Protocol>();
+							Ipv4InterfaceAddress interface_a = ipv4_a->GetAddress((ipv4_a->GetInterfaceForDevice(d_a)), 0);
+							Ipv4Address ipv4address_a = interface_a.GetLocal();
+							Ptr<Node> DesNode = c.Get(i);
+							uint32_t des_ip_num = DesNode->GetObject<Ipv4L3Protocol>()->GetNInterfaces();
+							for (uint32_t ind = 0; ind < des_ip_num; ind++)
+							{
+								Ipv4Address DesIp = DesNode->GetObject<Ipv4L3Protocol>()->GetInterface(ind)->GetAddress(0).GetLocal();
+								Ipv4RoutingTableEntry* rou = new Ipv4RoutingTableEntry(Ipv4RoutingTableEntry::CreateHostRouteTo(DesIp, ipv4address_a, m_ipv4->GetInterfaceForDevice(d_l)));
+
+								m_SatelliteRoutes.push_back(rou);
+							}
+						}
+						else continue;
+					}
+				}
+//				m_SatelliteRoutes.push_back(&Ipv4RoutingTableEntry::CreateHostRouteTo(Ipv4Address("0.0.0.0"),ipv4address_a,m_ipv4->GetInterfaceForDevice(d_l)));
+			}
+			return m_SatelliteRoutes;
+}
 
 
 

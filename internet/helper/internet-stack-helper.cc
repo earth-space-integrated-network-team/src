@@ -123,7 +123,7 @@ InternetStackHelper::Initialize ()
   Ipv4ListRoutingHelper listRouting;
   Ipv6StaticRoutingHelper staticRoutingv6;
   listRouting.Add (staticRouting, 0);
-  listRouting.Add (globalRouting, -10);
+  listRouting.Add (globalRouting, 10);
   SetRoutingHelper (listRouting);
   SetRoutingHelper (staticRoutingv6);
 }

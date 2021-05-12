@@ -139,6 +139,7 @@ Ipv4GlobalRouting::AddASExternalRouteTo (Ipv4Address network,
 Ptr<Ipv4Route>
 Ipv4GlobalRouting::LookupGlobal (Ipv4Address dest, Ptr<NetDevice> oif)
 {
+	std::cout<<"LookupGlobal!!!!!!!!!!!!!!!!!!!!!"<<std::endl;
   NS_LOG_FUNCTION (this << dest << oif);
   NS_LOG_LOGIC ("Looking for route for destination " << dest);
   Ptr<Ipv4Route> rtentry = 0;
@@ -158,6 +159,7 @@ Ipv4GlobalRouting::LookupGlobal (Ipv4Address dest, Ptr<NetDevice> oif)
             {
               if (oif != m_ipv4->GetNetDevice ((*i)->GetInterface ()))
                 {
+            	  //std::cout<<"fuckkkkkkkkkkkkk"<<std::endl;
                   NS_LOG_LOGIC ("Not on requested interface, skipping");
                   continue;
                 }
@@ -477,6 +479,7 @@ Ipv4GlobalRouting::RouteOutput (Ptr<Packet> p, const Ipv4Header &header, Ptr<Net
     {
       sockerr = Socket::ERROR_NOROUTETOHOST;
     }
+  std::cout<<"RouteOutput!!!!!!!!!!!!!!!!!!!!!!!!!!"<<rtentry->GetDestination()<<" "<<rtentry->GetGateway()<<" "<<std::endl;
   return rtentry;
 }
 

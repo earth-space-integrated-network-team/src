@@ -222,6 +222,7 @@ Ipv4StaticRouting::RemoveMulticastRoute (uint32_t index)
 Ptr<Ipv4Route>
 Ipv4StaticRouting::LookupStatic (Ipv4Address dest, Ptr<NetDevice> oif)
 {
+	std::cout<<"LookupStatic (Ipv4Address dest, Ptr<NetDevice> oif)!!!!!!!!!!!!!!!!!!!!"<<std::endl;
   NS_LOG_FUNCTION (this << dest << " " << oif);
   Ptr<Ipv4Route> rtentry = 0;
   uint16_t longest_mask = 0;
@@ -307,6 +308,7 @@ Ipv4StaticRouting::LookupStatic (
   Ipv4Address group,
   uint32_t    interface)
 {
+	std::cout<<"LookupStatic(Ipv4Address origin,Ipv4Address group,uint32_t    interface)!!!!!!!!!!!!!!!!!!!!"<<std::endl;
   NS_LOG_FUNCTION (this << origin << " " << group << " " << interface);
   Ptr<Ipv4MulticastRoute> mrtentry = 0;
 
@@ -459,6 +461,7 @@ Ipv4StaticRouting::RemoveRoute (uint32_t index)
 Ptr<Ipv4Route> 
 Ipv4StaticRouting::RouteOutput (Ptr<Packet> p, const Ipv4Header &header, Ptr<NetDevice> oif, Socket::SocketErrno &sockerr)
 {
+	std::cout<<"RouteOutput!!!!!!!!!!!!!!!!!"<<std::endl;
   NS_LOG_FUNCTION (this << p<< header << oif << sockerr);
   Ipv4Address destination = header.GetDestination ();
   Ptr<Ipv4Route> rtentry = 0;
