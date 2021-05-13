@@ -58,6 +58,7 @@ public:
   std::vector<NodeContainer> plane; //node container for each plane
   std::vector<Ipv4InterfaceContainer> intra_plane_interfaces;
   std::vector<Ipv4InterfaceContainer> inter_plane_interfaces;
+  std::vector<std::pair<uint32_t, uint32_t>> logical_address_table;
 
   double DistanceOfTwoPoints(double r1,double xita1,double fai1,double r2,double xita2,double fai2) const;
 
