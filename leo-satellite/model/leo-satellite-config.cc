@@ -22,7 +22,9 @@ NS_OBJECT_ENSURE_REGISTERED (LeoSatelliteConfig);
 NS_LOG_COMPONENT_DEFINE ("LeoSatelliteConfig");
 
 typedef std::vector<Ipv4RoutingTableEntry *> SatelliteRoutes;
-SatelliteRoutes GenerateSatelliteRoutingTable(SatelliteRoutes m_SatelliteRoutes,Ptr<Node> node,NodeContainer c, std::vector<std::pair<uint32_t, uint32_t>> logical_address_table);
+SatelliteRoutes GenerateSatelliteRoutingTable(SatelliteRoutes m_SatelliteRoutes,Ptr<Node> node,NodeContainer c,
+											  std::vector<std::pair<uint32_t, uint32_t>> logical_address_table);//,
+//											  std::vector<std::pair<std::pair<uint32_t,uint32_t>,std::vector<uint32_t>>> satellite_load_table);
 //SatelliteRoutes GenerateSatelliteRoutingTable(SatelliteRoutes m_SatelliteRoutes,Ptr<Ipv4>m_ipv4,NodeContainer c, std::vector<std::pair<uint32_t, uint32_t>> logical_address_table);
 
 
@@ -51,6 +53,7 @@ TypeId LeoSatelliteConfig::GetInstanceTypeId (void) const
 }
 
 //constructor
+
 LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satellites_per_plane, double altitude)
 {
 
@@ -58,6 +61,7 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
   this->num_planes = num_planes;
   this->num_satellites_per_plane = num_satellites_per_plane;
   this->m_altitude = altitude;
+
 
   uint32_t total_num_satellites = num_planes*num_satellites_per_plane;
   NodeContainer temp;
@@ -131,7 +135,7 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
   //intraplane_link_helper.EnablePcapAll("intraplane_link");
   //
   //
-  intraplane_link_helper.SetDeviceAttribute ("DataRate", StringValue ("5.36Gbps"));
+  intraplane_link_helper.SetDeviceAttribute ("DataRate", StringValue ("5Mbps"));
   intraplane_link_helper.SetChannelAttribute ("Delay", TimeValue(Seconds (delay)));
 
   std::cout<<"Setting up intra-plane links with distance of "<<distance<<" km and delay of "<<delay<<" seconds."<<std::endl;
@@ -189,7 +193,7 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
 
      // interplane_link_helper.EnablePcapAll("interplane_link");
 
-      interplane_link_helper.SetDeviceAttribute("DataRate", StringValue ("5.36Gbps"));
+      interplane_link_helper.SetDeviceAttribute("DataRate", StringValue ("5Mbps"));
       interplane_link_helper.SetChannelAttribute("Delay", TimeValue(Seconds(delay)));
 
       badlink.SetDeviceAttribute("DataRate", StringValue ("1bps"));
@@ -202,26 +206,6 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
 
       NetDeviceContainer temp_netdevice_container;
 
-//      if(nodeAPos.x < -70 || nodeAPos.x >70 || nodeBPos.x < -70 || nodeBPos.x > 70) // swd
-//      {
-//    	  node_pr[i*num_satellites_per_plane+j]=0;
-//
-//    	  temp_netdevice_container = badlink.Install(temp_node_container.Get(0),temp_node_container.Get(1));
-//
-//    	  std::cout<<"Channel can not open between plane "<<i<<" satellite "<<j<<" and plane "<<(i+1)%num_planes<<" satellite "<<nodeBIndex<< std::endl;
-//          std::cout<<"With Position of" <<std::endl;
-//          std::cout<<"("<<i<<","<<j<<"): "<<"x:"<<plane[i].Get(j)->GetObject<MobilityModel>()->GetPosition().x
-//        		                          <<"	y:"<<plane[i].Get(j)->GetObject<MobilityModel>()->GetPosition().y
-//    									  <<"	z:"<<plane[i].Get(j)->GetObject<MobilityModel>()->GetPosition().z
-//    									  <<std::endl;
-//          std::cout<<"("<<i+1<<","<<j<<"): "<<"x:"<<plane[i+1].Get(j)->GetObject<MobilityModel>()->GetPosition().x
-//            		                      <<"	y:"<<plane[i+1].Get(j)->GetObject<MobilityModel>()->GetPosition().y
-//        							      <<"	z:"<<plane[i+1].Get(j)->GetObject<MobilityModel>()->GetPosition().z
-//        								  <<std::endl;
-//      }
-//      else
-//      {
-    	  node_pr[i*num_satellites_per_plane+j]=1;
     	  temp_netdevice_container = interplane_link_helper.Install(temp_node_container.Get(0),temp_node_container.Get(1));
     	  std::cout<<"Channel open between plane "<<i<<" satellite "<<j<<" and plane "<<(i+1)%num_planes<<" satellite "<<nodeBIndex<< " with distance "<<distance<< "km and delay of "<<delay<<" seconds"<<std::endl;
           std::cout<<"With Position of" <<std::endl;
@@ -286,7 +270,7 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
   }
   FreePointToPointHelper p2p_for_all_nodes;
   NetDeviceContainer all_nodes_p2p_devices;
-  all_nodes_p2p_devices = p2p_for_all_nodes.Install(all_nodes,StringValue("5.36Gbps"));
+  all_nodes_p2p_devices = p2p_for_all_nodes.Install(all_nodes,StringValue("5Mbps"));
 
   for(uint32_t kk =0;kk<all_nodes_p2p_devices.GetN();kk++)
   {
@@ -388,6 +372,7 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
   //Populate Routing Tables
 //	  Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
 	NodeContainer c;
+
 	for(uint32_t i=0;i<num_planes;i++)
 	{
 		for(uint32_t j=0;j<num_satellites_per_plane;j++)
@@ -395,6 +380,15 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
 
 			logical_address_table.push_back(std::make_pair(i,j));
 			Ptr<Node> node=plane[i].Get(j);
+//			uint32_t device_num=node->GetNDevices();
+			std::vector<uint32_t> n_device_queue;
+//			for(uint32_t k=0;k<device_num;k++)
+//			{
+//				uint32_t load=node->GetDevice(k)->GetObject<PointToPointNetDevice>()->GetQueue()->GetNPackets();
+//				n_device_queue.push_back(load);
+//			}
+//			satellite_load_table.push_back(std::make_pair(std::make_pair(i,j),n_device_queue));
+
 			c.Add(node);
 			Ptr<Ipv4>ipv4_temp=node->GetObject<Ipv4>();
 			int16_t priority;
@@ -439,7 +433,7 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
 			Ptr<Node> node =plane[i].Get(j);
 			SatelliteRoutes m_SatelliteRoutes;
 			//std::cout<<"GenerateSatelliteRoutingTable(m_SatelliteRoutes,node,c,logical_address_table)"<<std::endl;
-			m_SatelliteRoutes=GenerateSatelliteRoutingTable(m_SatelliteRoutes,node,c,logical_address_table);
+			m_SatelliteRoutes=GenerateSatelliteRoutingTable(m_SatelliteRoutes,node,c,logical_address_table);//,satellite_load_table);
 			Ptr<Ipv4>ipv4_temp=node->GetObject<Ipv4>();
 			int16_t priority;
 			Ptr<Ipv4GlobalRouting>routing=ipv4_temp->
@@ -532,19 +526,26 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
 
 
 
-//  std::cout<<"Populating Routing Tables"<<std::endl;
+
+  std::cout<<"Populating Routing Tables"<<std::endl;
 //  Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
-  double time=Simulator::Now().GetSeconds();
-  std::string routename="routes_at_nownownow";
-  routename+=std::to_string(time);
-  Ptr<OutputStreamWrapper> routingStream = Create<OutputStreamWrapper>(routename,std::ios::out);
-  Ipv4GlobalRoutingHelper::PrintRoutingTableAllAt(Seconds(0),routingStream);
+//  double time=Simulator::Now().GetSeconds();
+//  std::string routename="routes_at_nownownow";
+//  routename+=std::to_string(time);
+//  Ptr<OutputStreamWrapper> routingStream = Create<OutputStreamWrapper>(routename,std::ios::out);
+//  Ipv4GlobalRoutingHelper::PrintRoutingTableAllAt(Seconds(0),routingStream);
 //  Ipv4GlobalRoutingHelper::Print(ground_stations.Get(0),routingStream,Seconds(3.0));
 
 //
 
-  PrintGlobalNetInfo();
+//  PrintGlobalNetInfo();
   std::cout<<"Finished Populating Routing Tables"<<std::endl;
+  std::cout<<Simulator::Now().GetSeconds()<<std::endl;
+  for(uint32_t i=0;i<20;i++)
+  {
+	  Simulator::Schedule(Seconds((i-1)*10),&LeoSatelliteConfig::UpdateLinks,this);
+//	  std::cout<<"--------------------"<<i<<Simulator::Now().GetSeconds()<<std::endl;
+  }
 
 }
 
@@ -597,7 +598,7 @@ void LeoSatelliteConfig::UpdateLinks()  //swd
 
 		    if(nodeAPos.x < -70 || nodeAPos.x >70 || nodeBPos.x < -70 || nodeBPos.x > 70) // swd
 		    {
-		    	node_pr[i*num_satellites_per_plane+j] = 0;
+//		    	node_pr[i*num_satellites_per_plane+j] = 0;
 		    	this->inter_plane_devices[i*num_satellites_per_plane+j].Get(0)->SetAttribute("DataRate", StringValue("1bps"));
 		    	this->inter_plane_devices[i*num_satellites_per_plane+j].Get(1)->SetAttribute("DataRate", StringValue("1bps"));
 //		    	this->inter_plane_channels[i*num_satellites_per_plane+j]->SetAttribute("Delay", TimeValue(Seconds(2000)));
@@ -606,9 +607,9 @@ void LeoSatelliteConfig::UpdateLinks()  //swd
 		    }
 		    else
 		    {
-		    	node_pr[i*num_satellites_per_plane+j] = 1;
-		    	this->inter_plane_devices[i*num_satellites_per_plane+j].Get(0)->SetAttribute("DataRate", StringValue("5.36Gbps"));
-		        this->inter_plane_devices[i*num_satellites_per_plane+j].Get(1)->SetAttribute("DataRate", StringValue("5.36Gbps"));
+//		    	node_pr[i*num_satellites_per_plane+j] = 1;
+		    	this->inter_plane_devices[i*num_satellites_per_plane+j].Get(0)->SetAttribute("DataRate", StringValue("5Mbps"));
+		        this->inter_plane_devices[i*num_satellites_per_plane+j].Get(1)->SetAttribute("DataRate", StringValue("5Mbps"));
 		    	this->inter_plane_channels[i*num_satellites_per_plane+j]->SetAttribute("Delay", TimeValue(Seconds(delay)));
 		    	//temp_netdevice_container = interplane_link_helper.Install(temp_node_container);
 		    	//std::cout<<"Channel open between plane "<<i<<" satellite "<<j<<" and plane "<<(i+1)%num_planes<<" satellite "<<nodeBIndex<< " with distance "<<distance<< "km and delay of "<<delay<<" seconds"<<std::endl;
@@ -728,7 +729,7 @@ void LeoSatelliteConfig::UpdateLinks()  //swd
 		{
 			Ptr<Node> node =plane[i].Get(j);
 			SatelliteRoutes m_SatelliteRoutes;
-			m_SatelliteRoutes=GenerateSatelliteRoutingTable(m_SatelliteRoutes,node,c,logical_address_table);
+			m_SatelliteRoutes=GenerateSatelliteRoutingTable(m_SatelliteRoutes,node,c,logical_address_table);//,satellite_load_table);
 			Ptr<Ipv4>ipv4_temp=node->GetObject<Ipv4>();
 			int16_t priority;
 			Ptr<Ipv4GlobalRouting>routing=ipv4_temp->
@@ -818,11 +819,11 @@ void LeoSatelliteConfig::UpdateLinks()  //swd
 //  	  	  	  	      GetRoutingProtocol()->
 //                      GetObject<Ipv4ListRouting>()->ChangePriority(priority);
 	}
-	  double time=Simulator::Now().GetSeconds();
-	  std::string routename="routes_at";
-	  routename+=std::to_string(time);
-	  Ptr<OutputStreamWrapper> routingStream = Create<OutputStreamWrapper>(routename,std::ios::out);
-	  Ipv4GlobalRoutingHelper::PrintRoutingTableAllAt(Seconds(0),routingStream);
+//	  double time=Simulator::Now().GetSeconds();
+//	  std::string routename="routes_at";
+//	  routename+=std::to_string(time);
+//	  Ptr<OutputStreamWrapper> routingStream = Create<OutputStreamWrapper>(routename,std::ios::out);
+//	  Ipv4GlobalRoutingHelper::PrintRoutingTableAllAt(Seconds(0),routingStream);
 
 
 
@@ -831,6 +832,7 @@ void LeoSatelliteConfig::UpdateLinks()  //swd
 
 
 }
+
 
 void LeoSatelliteConfig::PrintGlobalNetInfo()
 {
@@ -1013,7 +1015,9 @@ std::vector<double> SatelliteRoutingDistance(std::vector<std::vector<std::pair<u
 
 
 
-SatelliteRoutes GenerateSatelliteRoutingTable(SatelliteRoutes m_SatelliteRoutes,Ptr<Node>current_node,NodeContainer c, std::vector<std::pair<uint32_t, uint32_t>> logical_address_table)
+SatelliteRoutes GenerateSatelliteRoutingTable(SatelliteRoutes m_SatelliteRoutes,Ptr<Node>current_node,NodeContainer c,
+		  	  	  	  	  	  	  	  	  	  std::vector<std::pair<uint32_t, uint32_t>> logical_address_table)//,
+//											  std::vector<std::pair<std::pair<uint32_t,uint32_t>,std::vector<uint32_t>>> satellite_load_table)
 {
 			Ptr<Ipv4>m_ipv4=current_node->GetObject<Ipv4>();
 //			double h = current_node->GetObject<MobilityModel>()->GetPosition().z;

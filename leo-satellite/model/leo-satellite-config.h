@@ -26,6 +26,7 @@
 #include "ns3/ipv4-global-routing-helper.h"
 #include "ns3/applications-module.h"
 #include "ns3/node-list.h"
+#include "ns3/queue.h"
 
 
 
@@ -53,12 +54,16 @@ public:
 
   void NodeIpv4Address();
 
+// static void(*UpdateLinkCallback)();
+
+
   NodeContainer ground_stations; //node container to hold ground stations
   std::vector<Ipv4InterfaceContainer> ground_station_interfaces;
   std::vector<NodeContainer> plane; //node container for each plane
   std::vector<Ipv4InterfaceContainer> intra_plane_interfaces;
   std::vector<Ipv4InterfaceContainer> inter_plane_interfaces;
   std::vector<std::pair<uint32_t, uint32_t>> logical_address_table;
+//  std::vector<std::pair<std::pair<uint32_t,uint32_t>,std::vector<uint32_t>>> satellite_load_table;
 
   double DistanceOfTwoPoints(double r1,double xita1,double fai1,double r2,double xita2,double fai2) const;
 
@@ -69,7 +74,7 @@ private:
 
   //uint32_t pr;//pr = 0 : no satellite in the polar region ; pr = 1 : more than one satellite in the polar region
 
-  int node_pr[12]={1}; //swd Store the value of pr
+  //int node_pr[12]={1}; //swd Store the value of pr
 
   std::vector<NetDeviceContainer> intra_plane_devices; //contains net devices for all P2P links for all planes
   std::vector<NetDeviceContainer> inter_plane_devices;
