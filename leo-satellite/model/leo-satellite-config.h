@@ -63,7 +63,7 @@ public:
   std::vector<Ipv4InterfaceContainer> intra_plane_interfaces;
   std::vector<Ipv4InterfaceContainer> inter_plane_interfaces;
   std::vector<std::pair<uint32_t, uint32_t>> logical_address_table;
-//  std::vector<std::pair<std::pair<uint32_t,uint32_t>,std::vector<uint32_t>>> satellite_load_table;
+  std::vector<std::pair<std::pair<uint32_t,uint32_t>,std::vector<uint32_t>>> satellite_load_table;
 
   double DistanceOfTwoPoints(double r1,double xita1,double fai1,double r2,double xita2,double fai2) const;
 
