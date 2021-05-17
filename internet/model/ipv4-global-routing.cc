@@ -231,6 +231,35 @@ Ipv4GlobalRouting::LookupGlobal (Ipv4Address dest, Ptr<NetDevice> oif)
           selectIndex = 0;
         }
       Ipv4RoutingTableEntry* route = allRoutes.at (selectIndex); 
+      Ptr<PointToPointNetDevice> d_l;
+      uint32_t route_ind;
+	  for(route_ind=0;route_ind<allRoutes.size();route_ind++)
+	  {
+		  for(uint32_t kk=0;kk<m_ipv4->GetObject<Node>()->GetNDevices();kk++)
+		  {
+			  Ptr<NetDevice> d_l0=m_ipv4->GetObject<Node>()->GetDevice(kk);
+			  if(!d_l0->IsPointToPoint()) continue;
+			  if(d_l0->GetChannel()==0)continue;
+			  d_l=d_l0->GetObject<PointToPointNetDevice>();
+			  Ptr<PointToPointChannel> c_l = d_l->GetChannel()->GetObject<PointToPointChannel>();
+			  Ptr<PointToPointNetDevice> d_a;
+			  d_a = (c_l->GetPointToPointDevice(0) == d_l) ? c_l->GetPointToPointDevice(1) : c_l->GetPointToPointDevice(0);
+			  Ptr<Ipv4> ipv4_a=d_a->GetNode()->GetObject<Ipv4>();
+			  int32_t interface_ind=ipv4_a->GetInterfaceForDevice(d_a);
+			  if(ipv4_a->GetAddress(interface_ind, 0).GetLocal()==route->GetGateway())
+				  break;
+		  }
+		  if(d_l->GetQueue()->GetNPackets()>80)
+		  {
+			  route=allRoutes.at(selectIndex+route_ind);
+		  }
+		  else break;
+	  }
+	  if(route_ind==allRoutes.size()) return 0;
+
+
+
+
       // create a Ipv4Route object from the selected routing table entry
       rtentry = Create<Ipv4Route> ();
       rtentry->SetDestination (route->GetDest ());

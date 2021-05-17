@@ -546,7 +546,7 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
   std::cout<<Simulator::Now().GetSeconds()<<std::endl;
   for(uint32_t i=0;i<2000;i++)
   {
-	  Simulator::Schedule(Seconds((i-1)/10.0),&LeoSatelliteConfig::UpdateLinks,this);
+	  Simulator::Schedule(Seconds(i/10.0),&LeoSatelliteConfig::UpdateLinks,this);
 //	  std::cout<<"--------------------"<<i<<Simulator::Now().GetSeconds()<<std::endl;
   }
 
@@ -1036,14 +1036,24 @@ double F(double a1,double a2,uint32_t flag)
 	}
 	case 2:
 	{
-		result=a2*exp(100*a1);
+		result=(a1*100*0.002*300000+a2)*exp(a1);
 		break;
 	}
 	case 3:
 	{
-		if(a1<0.5)
+		if(a1<0.8)
 		result=a1*100*0.002*300000+a2;
 		else result=a2*99999;
+		break;
+	}
+	case 4:
+	{
+		result=a2;
+		break;
+	}
+	case 5:
+	{
+		result=a1*100*0.0001*300000+a2;
 		break;
 	}
 	default:
@@ -1067,7 +1077,7 @@ std::vector<double> SatelliteRoutingDistance(std::vector<std::vector<std::pair<u
 		{
 			distance = distance +F(LoadRight(*node, *(node + 1), c,logical_address_table,satellite_load_table),
 								   DistanceBetweenSatellites(*node, *(node + 1), c,logical_address_table),
-								   3);
+								   6);
 		}
 		distance_table.push_back(distance);
 	}
@@ -1343,10 +1353,13 @@ SatelliteRoutes GenerateSatelliteRoutingTable(SatelliteRoutes m_SatelliteRoutes,
 //					std::cout<<"("<<routing[0][path_ind].first<<","<<routing[0][path_ind].second<<")->";
 //				}
 //				std::cout<<"("<<(routing[0].end()-1)->first<<","<<(routing[0].end()-1)->second<<")"<<std::endl;
+				for(uint32_t path_ind=0;path_ind<distance_table.size();path_ind++)
+				{
+
 
 				if (distance_table[0] > 0.5)
 				{
-					std::pair<uint32_t, uint32_t> gateway_logical = routing[0][1];
+					std::pair<uint32_t, uint32_t> gateway_logical = routing[path_ind][1];
 					uint32_t aa = 0;
 					for (std::vector<std::pair<uint32_t, uint32_t>>::iterator it = logical_address_table.begin(); it != logical_address_table.end(); it++)
 					{
@@ -1382,6 +1395,7 @@ SatelliteRoutes GenerateSatelliteRoutingTable(SatelliteRoutes m_SatelliteRoutes,
 						}
 						else continue;
 					}
+				}
 				}
 //				m_SatelliteRoutes.push_back(&Ipv4RoutingTableEntry::CreateHostRouteTo(Ipv4Address("0.0.0.0"),ipv4address_a,m_ipv4->GetInterfaceForDevice(d_l)));
 			}
