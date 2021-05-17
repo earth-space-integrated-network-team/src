@@ -541,7 +541,7 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
 //  PrintGlobalNetInfo();
   std::cout<<"Finished Populating Routing Tables"<<std::endl;
   std::cout<<Simulator::Now().GetSeconds()<<std::endl;
-  for(uint32_t i=0;i<200;i++)
+  for(uint32_t i=0;i<2000;i++)
   {
 	  Simulator::Schedule(Seconds(i/10.0),&LeoSatelliteConfig::UpdateLinks,this);
 //	  std::cout<<"--------------------"<<i<<Simulator::Now().GetSeconds()<<std::endl;
