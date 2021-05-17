@@ -156,7 +156,7 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
       PointToPointHelper badlink;
       interplane_link_helper.SetDeviceAttribute("DataRate", StringValue ("50Gbps"));
       interplane_link_helper.SetChannelAttribute("Delay", TimeValue(Seconds(delay)));
-      badlink.SetDeviceAttribute("DataRate", StringValue ("40Gbps"));
+      badlink.SetDeviceAttribute("DataRate", StringValue ("1bps"));
       badlink.SetChannelAttribute("Delay", TimeValue(Seconds(delay)));
 
       //按照（0,0）<->（1,0）的方式存放入NodeContainer
@@ -253,15 +253,19 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
   }
 
   //Install IP stack
+  OlsrHelper olsr;
+  //AodvHelper aodv;
+  Ipv4StaticRoutingHelper staticRouting;
   InternetStackHelper stack;
   Ipv4ListRoutingHelper list;
-  //OlsrHelper olsr;
-  AodvHelper aodv;
-  list.Add(aodv,100);
-  //list.Add(olsr,100);
+
+  //list.Add(aodv,100);
+  list.Add(olsr,100);
+  list.Add(staticRouting,0);
   stack.SetRoutingHelper(list);
   stack.Install(all_nodes);
-
+  Ptr<OutputStreamWrapper> routingStream = Create<OutputStreamWrapper> ("dynamic-global-routing.routes", std::ios::out);
+  olsr.PrintRoutingTableAllEvery(Seconds(2.0), routingStream,  Time::S);
 
   FreePointToPointHelper p2p_for_all_nodes;
   NetDeviceContainer all_nodes_p2p_devices;
@@ -410,6 +414,8 @@ LeoSatelliteConfig::LeoSatelliteConfig (uint32_t num_planes, uint32_t num_satell
   //Populate Routing Tables
  //std::cout<<"Populating Routing Tables"<<std::endl;
  // Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
+  //Ptr<OutputStreamWrapper> routingStream = Create<OutputStreamWrapper> ("dynamic-global-routing.routes", std::ios::out);
+  //Ipv4GlobalRoutingHelper::PrintRoutingTableAllEvery(Seconds(2.0), routingStream,  Time::S);
   //std::cout<<"Finished Populating Routing Tables"<<std::endl;
   PrintGlobalNetInfo();
 }
@@ -454,8 +460,8 @@ void LeoSatelliteConfig::UpdateLinks()  //swd
 		    if(nodeAPos.x < -70 || nodeAPos.x >70 || nodeBPos.x < -70 || nodeBPos.x > 70) // swd
 		    {
 		    	pr = 1;
-		    	this->inter_plane_devices[i*num_satellites_per_plane+j].Get(0)->SetAttribute("DataRate", StringValue("40Gbps"));
-		    	this->inter_plane_devices[i*num_satellites_per_plane+j].Get(1)->SetAttribute("DataRate", StringValue("40Gbps"));
+		    	this->inter_plane_devices[i*num_satellites_per_plane+j].Get(0)->SetAttribute("DataRate", StringValue("1Gbps"));
+		    	this->inter_plane_devices[i*num_satellites_per_plane+j].Get(1)->SetAttribute("DataRate", StringValue("1Gbps"));
 		    	this->inter_plane_channels[i*num_satellites_per_plane+j]->SetAttribute("Delay", TimeValue(Seconds(delay)));
 		    	std::cout<<"Channel can not open between plane "<<i<<" satellite "<<j<<" and plane "<<(i+1)%num_planes<<" satellite "<<nodeBIndex<< std::endl;
 		    }
@@ -618,8 +624,8 @@ void LeoSatelliteConfig::PrintGlobalNetInfo()
 						 <<intra_plane_interfaces[i*num_satellites_per_plane+j].GetAddress(1)<<std::endl;
 				uint32_t temp = (j==0 ? (i+1)*num_satellites_per_plane-1 : j-1);
 				std::cout<<"("<<i<<","<<j<<")->"<<"("<<i<<","<<temp%num_satellites_per_plane<<"):	"
-						 <<intra_plane_interfaces[temp].GetAddress(1)<<"->"
-						 <<intra_plane_interfaces[temp].GetAddress(0)<< std::endl;
+						 <<intra_plane_interfaces[i*num_satellites_per_plane+temp%num_satellites_per_plane].GetAddress(1)<<"->"
+						 <<intra_plane_interfaces[i*num_satellites_per_plane+temp%num_satellites_per_plane].GetAddress(0)<< std::endl;
 				std::cout<<"("<<i<<","<<j<<")->"<<"("<<i-1<<","<<j<<"):	"
 						 <<inter_plane_interfaces[(i-1)*num_satellites_per_plane+j].GetAddress(1)<<"->"
 						 <<inter_plane_interfaces[(i-1)*num_satellites_per_plane+j].GetAddress(0)<<std::endl;
@@ -632,8 +638,8 @@ void LeoSatelliteConfig::PrintGlobalNetInfo()
 						 <<intra_plane_interfaces[i*num_satellites_per_plane+j].GetAddress(1)<<std::endl;
 				uint32_t temp = (j==0 ? (i+1)*num_satellites_per_plane-1 : j-1);
 				std::cout<<"("<<i<<","<<j<<")->"<<"("<<i<<","<<temp%num_satellites_per_plane<<"):	"
-						 <<intra_plane_interfaces[temp].GetAddress(1)<<"->"
-						 <<intra_plane_interfaces[temp].GetAddress(0)<< std::endl;
+						 <<intra_plane_interfaces[i*num_satellites_per_plane+temp%num_satellites_per_plane].GetAddress(1)<<"->"
+						 <<intra_plane_interfaces[i*num_satellites_per_plane+temp%num_satellites_per_plane].GetAddress(0)<< std::endl;
 				std::cout<<"("<<i<<","<<j<<")->"<<"("<<i+1<<","<<j<<"):	"
 						 <<inter_plane_interfaces[i*num_satellites_per_plane+j].GetAddress(0)<<"->"
 						 <<inter_plane_interfaces[i*num_satellites_per_plane+j].GetAddress(1)<<std::endl;
